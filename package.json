@@ -4,10 +4,10 @@
   "description": "React component library and design system for trauma-aware interfaces — rooted in care ethics, nervous system literacy, and design for dignity.",
   "author": "Luana Micheau <luana@momops.io>",
   "license": "MIT",
-  "homepage": "https://github.com/lmicheau/trauma-informed-ui",
+  "homepage": "https://github.com/tropicgirlie/trauma-informed-ui",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lmicheau/trauma-informed-ui.git"
+    "url": "https://github.com/tropicgirlie/trauma-informed-ui.git"
   },
   "keywords": [
     "trauma-informed",

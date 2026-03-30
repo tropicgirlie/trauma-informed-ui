@@ -1,7 +1,7 @@
 # Trauma-Informed UI
 
 [![npm version](https://img.shields.io/npm/v/trauma-informed-ui?color=%233C7F8C&labelColor=%23ECE7DF)](https://www.npmjs.com/package/trauma-informed-ui)
-[![Storybook](https://img.shields.io/badge/Storybook-live-%233C7F8C?logo=storybook&logoColor=white&labelColor=%23ECE7DF)](https://lmicheau.github.io/trauma-informed-ui/)
+[![Storybook](https://img.shields.io/badge/Storybook-live-%233C7F8C?logo=storybook&logoColor=white&labelColor=%23ECE7DF)](https://tropicgirlie.github.io/trauma-informed-ui/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-%23D1E5E8?labelColor=%23ECE7DF)](./LICENSE)
 
 A React component library and design system for interfaces that centre dignity, care, and nervous system safety.
@@ -9,7 +9,7 @@ A React component library and design system for interfaces that centre dignity, 
 Created by **Luana Micheau** as part of the [MomOps](https://momops.io) and FemInnovate ecosystem.  
 Grounded in the [Care-Conscious Design (CCD)](https://momops.io/ccd) framework.
 
-> **Live component docs → [lmicheau.github.io/trauma-informed-ui](https://lmicheau.github.io/trauma-informed-ui/)**
+> **Live component docs → [tropicgirlie.github.io/trauma-informed-ui](https://tropicgirlie.github.io/trauma-informed-ui/)**
 
 ---
 
@@ -135,7 +135,7 @@ Full rationale: [`guidelines/samhsa-to-ui.md`](./guidelines/samhsa-to-ui.md)
 
 Interactive component documentation is deployed at:
 
-**[lmicheau.github.io/trauma-informed-ui](https://lmicheau.github.io/trauma-informed-ui/)**
+**[tropicgirlie.github.io/trauma-informed-ui](https://tropicgirlie.github.io/trauma-informed-ui/)**
 
 To run locally:
 
