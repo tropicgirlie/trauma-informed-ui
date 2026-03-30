@@ -1,0 +1,205 @@
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+/**
+ * Trauma-Informed UI — Design Tokens
+ *
+ * Import this file once at the root of your application:
+ *   import 'trauma-informed-ui/tokens.css'
+ *
+ * Colour rationale:
+ * Cool, muted blues/greens are the dominant hue (regulation, safety, calm).
+ * No true black or stark white — soft charcoal on warm off-white keeps
+ * contrast accessible (AA/AAA) while edges feel gentle rather than sharp.
+ * Reds and intense warm saturated colours are absent; the "danger" token is
+ * a desaturated dusty rose, used only for critical feedback.
+ *
+ * Sources: Innovation Unit, Eden Environments, Healing Attention Design
+ * Summary, Tiffany Kenyon Design, JLG Architects trauma-informed design.
+ *
+ * Motion rationale:
+ * No bounce or spring easing. Elastic motion activates threat responses in
+ * dysregulated nervous systems. All easing is linear or ease — smooth,
+ * predictable, and ignorable. motionSafe zeroes all durations.
+ */
+
+/* ─────────────────────────────────────────────────────────────
+   Light mode (default)
+   ───────────────────────────────────────────────────────────── */
+:root {
+
+  /* ── Surface ── */
+  --ti-bg:          #F6F4F0;   /* warm off-white — avoids stark white, reduces strain */
+  --ti-surface:     #ECE7DF;   /* gentle parchment — cards, inputs, subtle separation */
+  --ti-surface-alt: #E4DDD4;   /* slightly deeper for nested surfaces */
+
+  /* ── Primary — muted teal (calm, safety, clarity) ── */
+  --ti-primary:       #3C7F8C;
+  --ti-primary-hover: #2D6473;
+  --ti-primary-soft:  #D1E5E8;   /* chips, section backgrounds, highlights */
+  --ti-primary-text:  #FFFFFF;   /* text on --ti-primary backgrounds */
+
+  /* ── Secondary — sage green (grounding, regulation) ── */
+  --ti-secondary:       #7C8F7A;
+  --ti-secondary-hover: #667860;
+  --ti-secondary-soft:  #DCE8DA;
+  --ti-secondary-text:  #FFFFFF;
+
+  /* ── Accent — soft lavender (tenderness, warmth — use sparingly) ── */
+  --ti-accent:      #8C7BAF;
+  --ti-accent-soft: #E8E3F4;
+  --ti-accent-text: #FFFFFF;
+
+  /* ── Feedback ── */
+  --ti-success:      #4E8563;   /* calm green — not neon */
+  --ti-success-soft: #D6EAE0;
+  --ti-warning:      #C39A4A;   /* muted golden ochre — not bright yellow/orange */
+  --ti-warning-soft: #F4EDDB;
+  --ti-danger:       #B06565;   /* desaturated dusty rose — reserve for critical only, no pure red */
+  --ti-danger-soft:  #F2E4E4;
+  --ti-danger-hover: #8C4C4C;
+
+  /* ── Text ── */
+  --ti-text:       #2F3134;   /* soft charcoal — accessible without feeling harsh */
+  --ti-text-muted: #62666D;   /* helper text, secondary labels */
+  --ti-text-faint: #8B8F96;   /* placeholder, disabled */
+
+  /* ── Border ── */
+  --ti-border:        #D7D2C8;   /* low-contrast strokes — no visual noise */
+  --ti-border-strong: #BDB8AE;
+
+  /* ── Legacy compatibility aliases (components migrating from old tokens) ── */
+  --ti-color-cream:      var(--ti-bg);
+  --ti-color-ink:        var(--ti-text);
+  --ti-color-muted:      var(--ti-text-muted);
+  --ti-color-faint:      var(--ti-text-faint);
+  --ti-color-sage:       var(--ti-secondary);
+  --ti-color-sage-light: var(--ti-secondary-soft);
+  --ti-color-sage-dark:  var(--ti-secondary-hover);
+
+  /* ── Motion ── */
+  --ti-motion-fast: 150ms ease;
+  --ti-motion-med:  300ms ease;
+  --ti-motion-slow: 500ms ease;
+
+  /* ── Spacing ── */
+  --ti-space-1: 4px;
+  --ti-space-2: 8px;
+  --ti-space-3: 12px;
+  --ti-space-4: 16px;
+  --ti-space-5: 20px;
+  --ti-space-6: 24px;
+  --ti-space-8: 32px;
+
+  /* ── Border radius ── */
+  --ti-radius-sm: 8px;
+  --ti-radius-md: 12px;
+  --ti-radius-lg: 20px;
+
+  /* ── Typography ── */
+  /* Atkinson Hyperlegible: designed by the Braille Institute for maximum legibility.
+   * Distinct letterforms aid dyslexia (b/d/p/q), clear numerals aid dyscalculia,
+   * generous spacing supports ADHD readers. Falls back gracefully. */
+  --ti-font-body: 'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --ti-font-size-xs:   12px;
+  --ti-font-size-sm:   13px;
+  --ti-font-size-base: 15px;
+  --ti-font-size-md:   16px;
+  --ti-font-size-lg:   18px;
+
+  --ti-line-height-tight: 1.45;
+  --ti-line-height-base:  1.7;
+  --ti-line-height-loose: 1.9;
+
+  --ti-letter-spacing-base: 0.01em;
+  --ti-letter-spacing-wide: 0.04em;
+
+  /* ── Touch targets ── */
+  --ti-touch-target: 44px;   /* WCAG 2.5.5 AAA minimum */
+
+  /* ── Focus rings ── */
+  --ti-focus-ring:             0 0 0 3px rgba(60, 127, 140, 0.4);
+  --ti-focus-ring-destructive: 0 0 0 3px rgba(176, 101, 101, 0.4);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Dark / reduced-stimulation mode
+   Softer dark that avoids high contrast and heavy neon.
+   Applied via data-ti-dark="true" on the provider OR
+   automatically when prefers-color-scheme: dark and the user
+   has not explicitly chosen light.
+   ───────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ti-bg:          #15191C;
+    --ti-surface:     #1F2529;
+    --ti-surface-alt: #252C32;
+    --ti-primary:       #78B4C0;
+    --ti-primary-hover: #5E9FAD;
+    --ti-primary-soft:  #1C3840;
+    --ti-primary-text:  #15191C;
+    --ti-secondary:       #9DB49A;
+    --ti-secondary-hover: #839B80;
+    --ti-secondary-soft:  #1E2B1D;
+    --ti-secondary-text:  #15191C;
+    --ti-accent:      #B3A2D4;
+    --ti-accent-soft: #2A2440;
+    --ti-accent-text: #15191C;
+    --ti-success:      #6AAF85;
+    --ti-success-soft: #163324;
+    --ti-warning:      #D4AA5E;
+    --ti-warning-soft: #2E2412;
+    --ti-danger:       #C98080;
+    --ti-danger-soft:  #2E1A1A;
+    --ti-danger-hover: #A86060;
+    --ti-text:       #E7EBEE;
+    --ti-text-muted: #A8B0B8;
+    --ti-text-faint: #70787F;
+    --ti-border:        #30363D;
+    --ti-border-strong: #40484F;
+    --ti-focus-ring:             0 0 0 3px rgba(120, 180, 192, 0.45);
+    --ti-focus-ring-destructive: 0 0 0 3px rgba(201, 128, 128, 0.45);
+  }
+}
+
+[data-ti-dark="true"] {
+  --ti-bg:          #15191C;
+  --ti-surface:     #1F2529;
+  --ti-surface-alt: #252C32;
+  --ti-primary:       #78B4C0;
+  --ti-primary-hover: #5E9FAD;
+  --ti-primary-soft:  #1C3840;
+  --ti-primary-text:  #15191C;
+  --ti-secondary:       #9DB49A;
+  --ti-secondary-hover: #839B80;
+  --ti-secondary-soft:  #1E2B1D;
+  --ti-secondary-text:  #15191C;
+  --ti-accent:      #B3A2D4;
+  --ti-accent-soft: #2A2440;
+  --ti-accent-text: #15191C;
+  --ti-success:      #6AAF85;
+  --ti-success-soft: #163324;
+  --ti-warning:      #D4AA5E;
+  --ti-warning-soft: #2E2412;
+  --ti-danger:       #C98080;
+  --ti-danger-soft:  #2E1A1A;
+  --ti-danger-hover: #A86060;
+  --ti-text:       #E7EBEE;
+  --ti-text-muted: #A8B0B8;
+  --ti-text-faint: #70787F;
+  --ti-border:        #30363D;
+  --ti-border-strong: #40484F;
+  --ti-focus-ring:             0 0 0 3px rgba(120, 180, 192, 0.45);
+  --ti-focus-ring-destructive: 0 0 0 3px rgba(201, 128, 128, 0.45);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Reduced motion
+   ───────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ti-motion-fast: 0ms;
+    --ti-motion-med:  0ms;
+    --ti-motion-slow: 0ms;
+  }
+}
