@@ -6,8 +6,8 @@
 
 A React component library and design system for interfaces that centre dignity, care, and nervous system safety.
 
-Created by **Luana Micheau** as part of the [MomOps](https://momops.io) and FemInnovate ecosystem.  
-Grounded in the [Care-Conscious Design (CCD)](https://momops.io/ccd) framework.
+Created by **Luana Micheau** as part of the [MomOps](https://momops.org) and FemInnovate ecosystem.  
+Grounded in the [Care-Conscious Design (CCD)framework.
 
 > **Live component docs → [tropicgirlie.github.io/trauma-informed-ui](https://tropicgirlie.github.io/trauma-informed-ui/)**
 
