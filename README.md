@@ -212,4 +212,4 @@ Please read [`research/honest-critique.md`](./research/honest-critique.md) befor
 
 MIT — use freely with credit.
 
-Created by Luana Micheau · [MomOps](https://momops.io) · [Care-Conscious Design](https://momops.io/ccd)
+Created by Luana Micheau · [MomOps](https://momops.org) 
