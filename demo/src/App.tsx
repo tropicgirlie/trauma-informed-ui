@@ -65,7 +65,7 @@ function Nav() {
         <a href="#components" style={{ fontSize: '13px', color: T.textMuted, textDecoration: 'none', padding: '4px 10px' }}>Components</a>
         <a href="#tokens" style={{ fontSize: '13px', color: T.textMuted, textDecoration: 'none', padding: '4px 10px' }}>Tokens</a>
         <a href="#install" style={{ fontSize: '13px', color: T.textMuted, textDecoration: 'none', padding: '4px 10px' }}>Install</a>
-        <a href="https://tropicgirlie.github.io/trauma-informed-ui/" target="_blank" rel="noreferrer">
+        <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" target="_blank" rel="noreferrer">
           <Button size="sm" variant="secondary">Storybook ↗</Button>
         </a>
         <a href="https://github.com/tropicgirlie/trauma-informed-ui" target="_blank" rel="noreferrer">
@@ -108,7 +108,7 @@ function Hero() {
         trauma-informed care.
       </p>
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-        <a href="https://tropicgirlie.github.io/trauma-informed-ui/" target="_blank" rel="noreferrer">
+        <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" target="_blank" rel="noreferrer">
           <Button variant="primary" size="lg">View Storybook →</Button>
         </a>
         <a href="#install">
@@ -449,7 +449,7 @@ export default function App() {
 }`}</pre>
         </div>
         <div style={{ marginTop: '32px', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="https://tropicgirlie.github.io/trauma-informed-ui/" target="_blank" rel="noreferrer">
+          <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" target="_blank" rel="noreferrer">
             <Button variant="primary">Open Storybook →</Button>
           </a>
           <a href="https://github.com/tropicgirlie/trauma-informed-ui" target="_blank" rel="noreferrer">
@@ -476,7 +476,7 @@ function Footer() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '20px' }}>
-          <a href="https://tropicgirlie.github.io/trauma-informed-ui/" style={{ fontSize: '13px', color: T.textMuted, textDecoration: 'none' }} target="_blank" rel="noreferrer">Storybook</a>
+          <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" style={{ fontSize: '13px', color: T.textMuted, textDecoration: 'none' }} target="_blank" rel="noreferrer">Storybook</a>
           <a href="https://github.com/tropicgirlie/trauma-informed-ui" style={{ fontSize: '13px', color: T.textMuted, textDecoration: 'none' }} target="_blank" rel="noreferrer">GitHub</a>
           <a href="https://github.com/tropicgirlie/trauma-informed-ui/blob/main/LICENSE" style={{ fontSize: '13px', color: T.textMuted, textDecoration: 'none' }} target="_blank" rel="noreferrer">License</a>
         </div>
