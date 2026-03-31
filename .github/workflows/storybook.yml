@@ -1,4 +1,4 @@
-name: Deploy Storybook to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -28,16 +28,33 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - name: Install root dependencies
         run: npm ci
+
+      - name: Install demo dependencies
+        run: npm ci
+        working-directory: demo
+
+      - name: Build landing page
+        run: npm run build
+        working-directory: demo
+        env:
+          NODE_ENV: production
 
       - name: Build Storybook
         run: npm run build-storybook -- --output-dir storybook-static
 
+      - name: Combine into single deploy folder
+        run: |
+          mkdir -p _site
+          cp -r demo/dist/. _site/
+          mkdir -p _site/storybook
+          cp -r storybook-static/. _site/storybook/
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: storybook-static
+          path: _site
 
   deploy:
     needs: build

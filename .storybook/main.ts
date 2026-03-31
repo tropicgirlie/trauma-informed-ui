@@ -17,7 +17,7 @@ const config: StorybookConfig = {
   },
   viteFinal: async (config) => {
     if (isProd) {
-      config.base = '/trauma-informed-ui/'
+      config.base = '/trauma-informed-ui/storybook/'
     }
     return config
   },

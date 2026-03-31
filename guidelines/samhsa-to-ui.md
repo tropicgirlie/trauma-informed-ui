@@ -1,3 +1,10 @@
+<!--
+Author: Luana Micheau
+Copyright © 2024–2025 Luana Micheau. All rights reserved.
+This research document is original work by the author.
+Code in this repository is MIT licensed; this document is not.
+-->
+
 # SAMHSA principles → UI decisions
 
 This document maps SAMHSA's six principles of trauma-informed care to specific,

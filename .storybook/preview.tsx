@@ -42,7 +42,7 @@ const preview: Preview = {
         { name: 'reduced-stim',   value: '#15191C' },
       ],
     },
-    layout: 'fullscreen',
+    layout: 'padded',
     docs: {
       toc: true,
     },

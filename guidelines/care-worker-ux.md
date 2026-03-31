@@ -1,3 +1,10 @@
+<!--
+Author: Luana Micheau
+Copyright © 2024–2025 Luana Micheau. All rights reserved.
+This research document is original work by the author.
+Code in this repository is MIT licensed; this document is not.
+-->
+
 # Designing for care workers
 
 This document addresses a critical gap in the trauma-informed design literature:

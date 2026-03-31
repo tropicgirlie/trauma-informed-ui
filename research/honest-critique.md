@@ -1,3 +1,10 @@
+<!--
+Author: Luana Micheau
+Copyright © 2024–2025 Luana Micheau. All rights reserved.
+This research document is original work by the author.
+Code in this repository is MIT licensed; this document is not.
+-->
+
 # Honest critique: limitations of the trauma-informed design framework
 
 This document exists because trauma-washing is a real risk. "Trauma-informed"
