@@ -669,7 +669,7 @@ function Nav({ providerPage, activeHash }: { providerPage: boolean, activeHash: 
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
-function Hero() {
+function Hero({ onNavigate }: { onNavigate?: (view: View, componentId?: string) => void }) {
   return (
     <section id="top" style={{
       maxWidth: S.container, margin: '0 auto', padding: `104px ${S.gutter} ${S.sectionY}`,
@@ -715,6 +715,32 @@ function Hero() {
           <Button variant="secondary" size="lg">Provider focus</Button>
         </a>
       </div>
+      
+      {/* Design Kit Navigation */}
+      {onNavigate && (
+        <div style={{ 
+          marginTop: '32px', 
+          padding: '24px', 
+          background: T.surface, 
+          borderRadius: S.radius,
+          border: `1px solid ${T.border}`,
+          maxWidth: '600px',
+          margin: '32px auto 0',
+        }}>
+          <p style={{ fontSize: '14px', color: T.textMuted, margin: '0 0 16px', fontWeight: 500 }}>
+            New: Trauma-Informed Design Kit
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Button variant="primary" size="md" onClick={() => onNavigate('tokens')}>
+              Design Tokens
+            </Button>
+            <Button variant="secondary" size="md" onClick={() => onNavigate('gallery')}>
+              Component Gallery
+            </Button>
+          </div>
+        </div>
+      )}
+
       <a href="#principles" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '28px', color: T.textMuted, textDecoration: 'none', fontSize: '13px', fontWeight: 500 }}>
         <span>Scroll to explore</span>
         <span aria-hidden="true" style={{ fontSize: '20px', color: T.primary }}>↓</span>
@@ -2044,7 +2070,7 @@ function LandingPage({ activeHash, onNavigate }: { activeHash: string; onNavigat
   return (
     <div style={{ minHeight: '100vh', background: T.bg, fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: T.text }}>
       <Nav providerPage={false} activeHash={activeHash} />
-      <Hero />
+      <Hero onNavigate={onNavigate} />
       <Principles />
       <LibraryRoadmap />
       <LiveComponentsPreview />
