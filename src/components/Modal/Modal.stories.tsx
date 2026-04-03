@@ -52,24 +52,26 @@ export const Default: Story = { render: () => <ModalStory /> }
 export const Small: Story = { render: () => <ModalStory size="sm" /> }
 export const Large: Story = { render: () => <ModalStory size="lg" /> }
 
+function NoBackdropDismissStory() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button variant="secondary" onClick={() => setOpen(true)}>Open (no backdrop dismiss)</Button>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Important: please confirm"
+        closeOnBackdrop={false}
+        footer={
+          <Button variant="primary" onClick={() => setOpen(false)}>I understand</Button>
+        }
+      >
+        <p>You must use the button below or press Escape to close this dialog.</p>
+      </Modal>
+    </>
+  )
+}
+
 export const NoBackdropDismiss: Story = {
-  render: () => {
-    const [open, setOpen] = useState(false)
-    return (
-      <>
-        <Button variant="secondary" onClick={() => setOpen(true)}>Open (no backdrop dismiss)</Button>
-        <Modal
-          open={open}
-          onClose={() => setOpen(false)}
-          title="Important: please confirm"
-          closeOnBackdrop={false}
-          footer={
-            <Button variant="primary" onClick={() => setOpen(false)}>I understand</Button>
-          }
-        >
-          <p>You must use the button below or press Escape to close this dialog.</p>
-        </Modal>
-      </>
-    )
-  },
+  render: () => <NoBackdropDismissStory />,
 }

@@ -8,3 +8,4 @@ storybook-static/
 coverage/
 demo/node_modules/
 demo/dist/
+.roo/mcp.json

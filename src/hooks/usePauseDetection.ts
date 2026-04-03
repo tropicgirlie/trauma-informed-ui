@@ -39,8 +39,9 @@ export function usePauseDetection({
   useEffect(() => {
     const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart']
     events.forEach((e) => window.addEventListener(e, reset, { passive: true }))
-    reset()
+    const t = setTimeout(reset, 0)
     return () => {
+      clearTimeout(t)
       events.forEach((e) => window.removeEventListener(e, reset))
       if (timerRef.current) clearTimeout(timerRef.current)
     }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTraumaInformed } from '../TraumaInformedProvider'
 import { Button } from '../Button'
 
@@ -336,14 +336,6 @@ export function PauseAware({
   const [visible, setVisible] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const defaultActions: PauseAwareAction[] = [
-    { label: 'Keep going', onClick: () => handleAction(), variant: 'primary' },
-    { label: 'Save and pause', onClick: () => handleAction() },
-    { label: 'Exit safely', onClick: () => handleAction() },
-  ]
-
-  const activeActions = actions ?? defaultActions
-
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
     if (visible) return
@@ -353,21 +345,30 @@ export function PauseAware({
     }, threshold)
   }, [threshold, visible, onPause])
 
-  useEffect(() => {
-    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart']
-    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }))
-    resetTimer()
-    return () => {
-      events.forEach((e) => window.removeEventListener(e, resetTimer))
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [resetTimer])
-
   const handleAction = useCallback(() => {
     setVisible(false)
     onResume?.()
     resetTimer()
   }, [onResume, resetTimer])
+
+  const defaultActions: PauseAwareAction[] = useMemo(() => [
+    { label: 'Keep going', onClick: () => handleAction(), variant: 'primary' },
+    { label: 'Save and pause', onClick: () => handleAction() },
+    { label: 'Exit safely', onClick: () => handleAction() },
+  ], [handleAction])
+
+  const activeActions = actions ?? defaultActions
+
+  useEffect(() => {
+    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart']
+    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }))
+    const t = setTimeout(resetTimer, 0)
+    return () => {
+      clearTimeout(t)
+      events.forEach((e) => window.removeEventListener(e, resetTimer))
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [resetTimer])
 
   if (!visible) return null
 

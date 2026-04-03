@@ -31,6 +31,14 @@ export interface RegretButtonProps {
 
 type State = 'idle' | 'pending' | 'undone'
 
+const TrashIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
+    <path d="M10 11v6" /><path d="M14 11v6" />
+  </svg>
+)
+
 const UndoIcon = () => (
   <svg
     width="15"
@@ -127,14 +135,6 @@ export function RegretButton({
 
   const circumference = 2 * Math.PI * 11 // r=11
   const dashOffset = circumference * progress
-
-  const TrashIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
-      <path d="M10 11v6" /><path d="M14 11v6" />
-    </svg>
-  )
 
   const resolvedIcon = icon ?? (variant === 'destructive' ? <TrashIcon /> : <UndoIcon />)
 

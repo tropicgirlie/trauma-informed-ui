@@ -57,16 +57,16 @@ function ToastEntry({ item, onDismiss }: { item: ToastItem; onDismiss: (id: stri
   const variant = item.variant ?? 'info'
   const { bg, border, color, icon: iconColor } = TOAST_COLORS[variant]
 
+  const handleDismiss = useCallback(() => {
+    setVisible(false)
+    setTimeout(() => onDismiss(item.id), 250)
+  }, [onDismiss, item.id])
+
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true))
     timerRef.current = setTimeout(() => handleDismiss(), duration)
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [])
-
-  const handleDismiss = () => {
-    setVisible(false)
-    setTimeout(() => onDismiss(item.id), 250)
-  }
+  }, [handleDismiss, duration])
 
   return (
     <div

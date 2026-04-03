@@ -1,9 +1,10 @@
-import React, { CSSProperties, ReactNode, useEffect, useMemo, useState } from 'react'
+import React, { CSSProperties, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
   ArrowUpRight,
   BookOpen,
   CheckCircle2,
+  ChevronLeft,
   Compass,
   Globe2,
   HeartHandshake,
@@ -11,9 +12,13 @@ import {
   MessageCircleHeart,
   MoonStar,
   PanelTop,
-  SlidersHorizontal,
+  Search,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
+  Sun,
+  Menu,
+  X,
 } from 'lucide-react'
 import {
   TraumaInformedProvider,
@@ -35,8 +40,11 @@ import {
   RegretButton,
 } from 'trauma-informed-ui'
 
-// ─── Tokens ──────────────────────────────────────────────────────────────────
-const T = {
+// ═══════════════════════════════════════════════════════════════════════════════
+// DESIGN TOKENS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const LIGHT_TOKENS = {
   bg: '#F6F4F0',
   surface: '#ECE7DF',
   surfaceDeep: '#DDD6CC',
@@ -53,13 +61,377 @@ const T = {
   white: '#FDFCFA',
 }
 
+const DARK_TOKENS = {
+  bg: '#15191C',
+  surface: '#1F2529',
+  surfaceDeep: '#2A3136',
+  primary: '#6ABFCC',
+  primarySoft: '#2A4F54',
+  primaryMid: '#4A9BA6',
+  secondary: '#8B9A89',
+  accent: '#A99BC7',
+  danger: '#C97A7A',
+  text: '#E7ECEF',
+  textMuted: '#A8B0B6',
+  textSubtle: '#6B757C',
+  border: '#3A4248',
+  white: '#0D1114',
+}
+
+type Theme = 'light' | 'dark'
+
+const useTokens = (theme: Theme) => theme === 'dark' ? DARK_TOKENS : LIGHT_TOKENS
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SPACING & LAYOUT
+// ═══════════════════════════════════════════════════════════════════════════════
+
 const S = {
   sectionY: '88px',
   gutter: '32px',
   container: '1120px',
   narrow: '900px',
   radius: '24px',
+  mobileContainer: '358px',
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPONENT DATA
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type ComponentCategory = 'feedback' | 'form' | 'layout' | 'overlay' | 'navigation' | 'foundation'
+
+interface ComponentSpec {
+  id: string
+  name: string
+  category: ComponentCategory
+  tagline: string
+  samhsaPrinciple: string
+  purpose: string
+  anatomy: string[]
+  props: { name: string; type: string; description: string; required?: boolean }[]
+  states: string[]
+  tokenMapping: Record<string, string>
+  nervousSystemNotes: string[]
+  accessibilityNotes: string[]
+  contrastChecks: string[]
+  calmCopy: {
+    example: string
+    do: string[]
+    dont: string[]
+  }
+}
+
+const COMPONENT_SPECS: ComponentSpec[] = [
+  {
+    id: 'regret-button',
+    name: 'RegretButton',
+    category: 'feedback',
+    tagline: 'Repair is possible',
+    samhsaPrinciple: 'Empowerment, voice & choice',
+    purpose: 'Provides an undo window after action — reduces shame and allows repair.',
+    anatomy: ['Primary action trigger', 'Undo affordance with countdown', 'Confirmation state', 'Progress indicator'],
+    props: [
+      { name: 'label', type: 'string', description: 'Button label text', required: true },
+      { name: 'windowMs', type: 'number', description: 'Undo window duration in milliseconds (default: 7000)', required: false },
+      { name: 'onAction', type: '() => void', description: 'Callback when action is triggered', required: true },
+      { name: 'onUndo', type: '() => void', description: 'Callback when undo is clicked', required: false },
+      { name: 'variant', type: 'primary | destructive', description: 'Visual treatment', required: false },
+    ],
+    states: ['Before action (idle)', 'Action occurred (undo available)', 'Undo clicked', 'Expired (final state)'],
+    tokenMapping: {
+      'Primary button': 'primary',
+      'Undo background': 'primarySoft',
+      'Destructive variant': 'danger',
+      'Text': 'text',
+      'Countdown ring': 'primaryMid',
+    },
+    nervousSystemNotes: [
+      'Clear undo affordance prevents shame spirals after mistakes',
+      'Non-judgmental copy: "Undo" rather than "Cancel" or "Revert"',
+      'Sufficient time window (7s default) for comprehension',
+    ],
+    accessibilityNotes: [
+      'Timer announced to screen readers with aria-live="polite"',
+      'Focus moves to undo button when available',
+      'Escape key dismisses undo without triggering action',
+    ],
+    contrastChecks: [
+      'Primary button: AA with white text (3:1 for large, 4.5:1 for small)',
+      'Undo state: Text on primarySoft requires dark text',
+    ],
+    calmCopy: {
+      example: 'Submitted — Undo',
+      do: ['Use neutral language', 'Acknowledge action without judgment', 'Offer clear repair path'],
+      dont: ['Shame-inducing language', 'Hidden or unclear undo paths', 'Too-short time windows'],
+    },
+  },
+  {
+    id: 'consent-stepper',
+    name: 'ConsentStepper',
+    category: 'form',
+    tagline: 'One decision at a time',
+    samhsaPrinciple: 'Collaboration & mutuality',
+    purpose: 'Present one granular decision per step; never bundle choices.',
+    anatomy: ['Step indicator', 'Decision content area', 'Choice options', 'Navigation (back/next)', 'Progress indicator'],
+    props: [
+      { name: 'steps', type: 'Step[]', description: 'Array of decision steps', required: true },
+      { name: 'currentStep', type: 'number', description: 'Current step index', required: false },
+      { name: 'onNext', type: '(stepIndex: number) => void', description: 'Navigate forward', required: true },
+      { name: 'onBack', type: '(stepIndex: number) => void', description: 'Navigate backward', required: true },
+      { name: 'allowSkip', type: 'boolean', description: 'Show skip affordance', required: false },
+    ],
+    states: ['Step base', 'Step with caution/warning', 'Final confirmation', 'Completed'],
+    tokenMapping: {
+      'Active step': 'primary',
+      'Inactive steps': 'textSubtle',
+      'Card background': 'surface',
+      'Border': 'border',
+      'Progress fill': 'primarySoft',
+    },
+    nervousSystemNotes: [
+      'Progress visibility reduces uncertainty about remaining steps',
+      'Skip/defer options honor agency without forcing false choices',
+      'Pause between steps allows processing time',
+    ],
+    accessibilityNotes: [
+      'Step announcements via aria-live on navigation',
+      'Skip link available at top of each step',
+      'Keyboard-only navigation supported',
+    ],
+    contrastChecks: [
+      'Inactive step text on background meets AA',
+      'Active step indicator clear at all sizes',
+    ],
+    calmCopy: {
+      example: 'Step 2 of 4 — You can skip this and return later',
+      do: ['Granular, unbundled choices', 'Clear step count', 'Explicit defer/skip options'],
+      dont: ['Bundled consent (agree to all)', 'Hidden total steps', 'Forced progression'],
+    },
+  },
+  {
+    id: 'disclosure-card',
+    name: 'DisclosureCard',
+    category: 'layout',
+    tagline: 'Progressive reveal',
+    samhsaPrinciple: 'Safety',
+    purpose: 'Progressive disclosure and content warnings before sensitive material.',
+    anatomy: ['Preview/collapsed state', 'Trigger warning badge', 'Expand affordance', 'Full content area', 'Dismiss option'],
+    props: [
+      { name: 'warningText', type: 'string', description: 'Content warning label', required: false },
+      { name: 'preview', type: 'ReactNode', description: 'Preview content when collapsed', required: true },
+      { name: 'fullContent', type: 'ReactNode', description: 'Full content when expanded', required: true },
+      { name: 'revealLabel', type: 'string', description: 'Label for reveal action', required: false },
+      { name: 'onReveal', type: '() => void', description: 'Callback when revealed', required: false },
+    ],
+    states: ['Collapsed (preview)', 'Expanded (full content)', 'Expanded with dismiss'],
+    tokenMapping: {
+      'Card background': 'surface',
+      'Warning badge': 'danger',
+      'Reveal button': 'secondary',
+      'Border': 'border',
+      'Icon': 'accent',
+    },
+    nervousSystemNotes: [
+      'Explicit content warnings allow nervous system preparation',
+      'User controls pacing of disclosure',
+      'Dismiss option provides escape if content becomes overwhelming',
+    ],
+    accessibilityNotes: [
+      'Warning announced before content via aria-describedby',
+      'Focus moves to content on expand',
+      'Collapsible via keyboard and screen reader',
+    ],
+    contrastChecks: [
+      'Warning badge (danger) on surface needs sufficient contrast',
+      'Preview text must meet AA on surface background',
+    ],
+    calmCopy: {
+      example: 'Content note: discussion of medical trauma — continue or skip',
+      do: ['Explicit content labels', 'Neutral, non-dramatic language', 'Optional skip/close'],
+      dont: ['Surprise disclosure', 'Vague warnings', 'Forced viewing'],
+    },
+  },
+  {
+    id: 'safe-exit',
+    name: 'SafeExit',
+    category: 'overlay',
+    tagline: 'Leave safely, immediately',
+    samhsaPrinciple: 'Safety',
+    purpose: 'Single-click exit to neutral destination, clears history.',
+    anatomy: ['Exit trigger', 'Confirm overlay (optional)', 'Redirect handling', 'History clearing'],
+    props: [
+      { name: 'redirectTo', type: 'string', description: 'URL to redirect to', required: true },
+      { name: 'label', type: 'string', description: 'Button label', required: false },
+      { name: 'clearHistory', type: 'boolean', description: 'Clear browser history', required: false },
+      { name: 'showConfirm', type: 'boolean', description: 'Show confirmation dialog', required: false },
+    ],
+    states: ['Visible action', 'Confirm overlay (if enabled)', 'Redirecting'],
+    tokenMapping: {
+      'Button': 'primary',
+      'Overlay background': 'surface',
+      'Confirm text': 'text',
+      'Icon': 'accent',
+    },
+    nervousSystemNotes: [
+      'Visible escape route lowers sympathetic activation',
+      'History clearing protects privacy in shared/surveilled environments',
+      'Confirm step prevents accidental exits',
+    ],
+    accessibilityNotes: [
+      'Exit button always reachable via keyboard',
+      'Confirm dialog uses modal pattern with focus trap',
+      'Announced to screen readers on activation',
+    ],
+    contrastChecks: [
+      'Exit button clearly visible at all times',
+      'Confirm overlay maintains readability',
+    ],
+    calmCopy: {
+      example: 'Leave this page — Go to Google',
+      do: ['Clear destination', 'Non-alarming language', 'Immediate action'],
+      dont: ['Alarming labels', 'Hidden placement', 'No privacy protection'],
+    },
+  },
+  {
+    id: 'breathing-guide',
+    name: 'BreathingGuide',
+    category: 'feedback',
+    tagline: 'Regulate in place',
+    samhsaPrinciple: 'Safety',
+    purpose: 'Gentle, optional regulation tool for moments of escalation.',
+    anatomy: ['Invitation (collapsed)', 'Visual breath cue', 'Instructional text', 'Timer/progress', 'Dismiss control'],
+    props: [
+      { name: 'prompt', type: 'string', description: 'Opening invitation text', required: false },
+      { name: 'breaths', type: 'number', description: 'Number of breath cycles', required: false },
+      { name: 'silentMode', type: 'boolean', description: 'Disable animations', required: false },
+      { name: 'onComplete', type: '() => void', description: 'Callback on completion', required: false },
+    ],
+    states: ['Invitation (collapsed)', 'Active (breathing)', 'Completed'],
+    tokenMapping: {
+      'Container': 'surface',
+      'Breath visual': 'primarySoft',
+      'Text': 'textMuted',
+      'Progress': 'secondary',
+      'Dismiss': 'textSubtle',
+    },
+    nervousSystemNotes: [
+      'Optional invitation respects autonomy',
+      'Paced breath cues support down-regulation',
+      'Silent mode for users with motion sensitivity',
+      'Easy dismiss if intervention feels wrong',
+    ],
+    accessibilityNotes: [
+      'Reduced-motion variant available',
+      'Breath timing announced for screen readers',
+      'No auto-play; user must initiate',
+    ],
+    contrastChecks: [
+      'Breath visual subtle but perceptible',
+      'Text on surface background meets AA',
+    ],
+    calmCopy: {
+      example: 'A few slow breaths can help — Try it?',
+      do: ['Optional invitation', 'Gentle, permissive language', 'Clear exit'],
+      dont: ['Prescriptive tone', 'Forced participation', 'Judgment of state'],
+    },
+  },
+  {
+    id: 'calming-message',
+    name: 'CalmingMessage',
+    category: 'feedback',
+    tagline: 'Co-regulating tone',
+    samhsaPrinciple: 'Peer support',
+    purpose: 'Supportive messages during wait states or transitions.',
+    anatomy: ['Message text', 'Optional icon', 'Context indicator'],
+    props: [
+      { name: 'message', type: 'string', description: 'Supportive text', required: true },
+      { name: 'tone', type: 'calm | encouraging | neutral', description: 'Emotional tone', required: false },
+      { name: 'showIcon', type: 'boolean', description: 'Show companion icon', required: false },
+    ],
+    states: ['Visible', 'Dismissed'],
+    tokenMapping: {
+      'Background': 'primarySoft',
+      'Text': 'text',
+      'Icon': 'secondary',
+      'Border': 'border',
+    },
+    nervousSystemNotes: [
+      'Co-regulating tone reduces isolation',
+      'During waits, uncertainty is reduced',
+      'Non-clinical, alongside language',
+    ],
+    accessibilityNotes: [
+      'Announced if content changes',
+      'Dismissible via keyboard',
+    ],
+    contrastChecks: [
+      'Text on primarySoft meets contrast requirements',
+    ],
+    calmCopy: {
+      example: 'This may take a moment — no rush',
+      do: ['Alongside language', 'Acknowledge difficulty', 'Normalize pacing'],
+      dont: ['Clinical detachment', 'False urgency', 'Minimizing language'],
+    },
+  },
+  {
+    id: 'safe-input',
+    name: 'SafeInput',
+    category: 'form',
+    tagline: 'Input with consent context',
+    samhsaPrinciple: 'Trustworthiness & transparency',
+    purpose: 'Accessible inputs with helper text for consent and optional pause affordances.',
+    anatomy: ['Label', 'Input field', 'Helper text', 'Optional warning flag', 'Error message area', 'Pause affordance'],
+    props: [
+      { name: 'label', type: 'string', description: 'Field label', required: true },
+      { name: 'helperText', type: 'string', description: 'Consent/purpose explanation', required: false },
+      { name: 'errorText', type: 'string', description: 'Error message', required: false },
+      { name: 'triggerWarning', type: 'boolean', description: 'Flag for caution', required: false },
+      { name: 'type', type: 'text | textarea | email | password', description: 'Input type', required: false },
+    ],
+    states: ['Default', 'Focus', 'Error', 'Disabled', 'With helper/caution text'],
+    tokenMapping: {
+      'Input background': 'surface',
+      'Border default': 'border',
+      'Border focus': 'primary',
+      'Error': 'danger',
+      'Label': 'text',
+      'Helper': 'textMuted',
+    },
+    nervousSystemNotes: [
+      'Helper text explains why input is needed',
+      'Inline validation gentle, not alarming',
+      'Avoid red-only error indicators',
+      'Clear repair paths for corrections',
+    ],
+    accessibilityNotes: [
+      'Label programmatically associated',
+      'Error announced via aria-live',
+      'Keyboard focus visible and clear',
+    ],
+    contrastChecks: [
+      'Input border visible against surface',
+      'Error state clear without relying solely on color',
+    ],
+    calmCopy: {
+      example: 'Email — Used only for appointment reminders. You can change this anytime.',
+      do: ['Explain purpose', 'Mention control/change options', 'Normalize pauses'],
+      dont: ['Vague purpose', 'Mandatory fields without explanation', 'Shaming error language'],
+    },
+  },
+]
+
+const CATEGORY_LABELS: Record<ComponentCategory, string> = {
+  feedback: 'Feedback',
+  form: 'Form Controls',
+  layout: 'Layout',
+  overlay: 'Overlays',
+  navigation: 'Navigation',
+  foundation: 'Foundation',
+}
+
+// ─── Tokens ──────────────────────────────────────────────────────────────────
+const T = LIGHT_TOKENS
 
 const SECTION_LABEL_STYLE: CSSProperties = {
   fontSize: '13px',
@@ -68,6 +440,56 @@ const SECTION_LABEL_STYLE: CSSProperties = {
   letterSpacing: '0.08em',
   color: T.textMuted,
   marginBottom: '10px',
+}
+
+type View = 'landing' | 'tokens' | 'gallery' | 'component'
+
+interface TokenSwatchProps {
+  name: string
+  hex: string
+  usage: string
+  textTreatment: string
+  contrast: string
+  theme: Theme
+}
+
+function TokenSwatch({ name, hex, usage, textTreatment, contrast, theme }: TokenSwatchProps) {
+  const t = theme === 'dark' ? DARK_TOKENS : LIGHT_TOKENS
+  const isDark = hex.toLowerCase() === '#15191c' || hex.toLowerCase() === '#1f2529' || hex.toLowerCase() === '#2a3136' || hex.toLowerCase() === '#0d1114'
+  
+  return (
+    <div style={{
+      background: t.surface,
+      borderRadius: '16px',
+      padding: '20px',
+      border: `1px solid ${t.border}`,
+    }}>
+      <div style={{
+        background: hex,
+        borderRadius: '12px',
+        height: '80px',
+        marginBottom: '16px',
+        border: isDark ? `1px solid ${t.border}` : 'none',
+      }} />
+      <div style={{ fontSize: '14px', fontWeight: 600, color: t.text, marginBottom: '4px' }}>
+        {name}
+      </div>
+      <div style={{ fontSize: '13px', fontFamily: 'monospace', color: t.textMuted, marginBottom: '12px' }}>
+        {hex}
+      </div>
+      <div style={{ fontSize: '12px', color: t.textMuted, lineHeight: 1.6 }}>
+        <div style={{ marginBottom: '8px' }}>
+          <strong style={{ color: t.text }}>Usage:</strong> {usage}
+        </div>
+        <div style={{ marginBottom: '8px' }}>
+          <strong style={{ color: t.text }}>Text:</strong> {textTreatment}
+        </div>
+        <div>
+          <strong style={{ color: t.text }}>Contrast:</strong> {contrast}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 const SAMHSA_PATTERNS = [
@@ -696,6 +1118,700 @@ function ProviderFocusPreview() {
   )
 }
 
+// ─── Design Kit: Tokens Page ──────────────────────────────────────────────────
+interface TokensPageProps {
+  theme: Theme
+  onToggleTheme: () => void
+  onNavigate: (view: View, componentId?: string) => void
+}
+
+function TokensPage({ theme, onToggleTheme, onNavigate }: TokensPageProps) {
+  const t = useTokens(theme)
+  const [copied, setCopied] = useState<string | null>(null)
+  
+  const copy = (val: string) => {
+    navigator.clipboard.writeText(val)
+    setCopied(val)
+    setTimeout(() => setCopied(null), 1500)
+  }
+
+  const lightTokens = [
+    { name: 'Background', hex: LIGHT_TOKENS.bg, usage: 'Page background. Use dark text only.', text: 'Dark text only', contrast: 'AA for body copy at standard sizes' },
+    { name: 'Surface', hex: LIGHT_TOKENS.surface, usage: 'Cards and panels. Use dark text only.', text: 'Dark text only', contrast: 'Check small text; prefer larger sizes' },
+    { name: 'Primary', hex: LIGHT_TOKENS.primary, usage: 'Primary actions (buttons, important links).', text: 'Light text at large sizes', contrast: 'AA with light text at large sizes' },
+    { name: 'Primary Soft', hex: LIGHT_TOKENS.primarySoft, usage: 'Supportive fills and gentle backgrounds.', text: 'Dark text only', contrast: 'Suitable for component backgrounds' },
+    { name: 'Secondary', hex: LIGHT_TOKENS.secondary, usage: 'Grounding accents, subtle controls.', text: 'Dark text (check small use)', contrast: 'Verify small text legibility' },
+    { name: 'Accent', hex: LIGHT_TOKENS.accent, usage: 'Highlights only (icons, affordances). Avoid tiny text.', text: 'Avoid for tiny text', contrast: 'Decorative/affordance use' },
+    { name: 'Danger', hex: LIGHT_TOKENS.danger, usage: 'Destructive actions.', text: 'Light text on danger', contrast: 'Check against parchment background' },
+    { name: 'Text', hex: LIGHT_TOKENS.text, usage: 'Primary copy color. Accessible body text.', text: 'On light backgrounds', contrast: 'Primary accessible text' },
+    { name: 'Border', hex: LIGHT_TOKENS.border, usage: 'Quiet dividers and decorative lines.', text: 'N/A', contrast: 'Decorative only' },
+  ]
+
+  const darkTokens = [
+    { name: 'Dark Background', hex: DARK_TOKENS.bg, usage: 'Page background in low-light contexts.', text: 'Light text only', contrast: 'Evening, on-call, triage use' },
+    { name: 'Dark Surface', hex: DARK_TOKENS.surface, usage: 'Cards and panels in dark mode.', text: 'Light text only', contrast: 'Supports layered hierarchy' },
+    { name: 'Dark Primary', hex: DARK_TOKENS.primary, usage: 'Actions in dark mode.', text: 'Dark text for contrast', contrast: 'Brighter for visibility in dark' },
+    { name: 'Dark Text', hex: DARK_TOKENS.text, usage: 'Primary accessible text in dark mode.', text: 'On dark backgrounds', contrast: 'Readable body copy' },
+  ]
+
+  return (
+    <div style={{ minHeight: '100vh', background: t.bg, fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: t.text }}>
+      {/* Header */}
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        background: theme === 'dark' ? 'rgba(21,25,28,0.92)' : 'rgba(246,244,240,0.92)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${t.border}`,
+        padding: `0 ${S.gutter}`, display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', minHeight: '72px', gap: '24px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => onNavigate('landing')}>
+          <div style={{
+            width: '34px', height: '34px', borderRadius: '12px',
+            background: t.primarySoft, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: t.primary,
+          }}><ShieldCheck size={18} strokeWidth={2} /></div>
+          <span style={{ fontWeight: 600, fontSize: '15px', color: t.text, letterSpacing: '-0.01em' }}>
+            trauma-informed-ui
+          </span>
+          <Badge variant="primary">Design Kit</Badge>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            onClick={onToggleTheme}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 14px', borderRadius: '999px',
+              border: `1px solid ${t.border}`, background: t.surface,
+              color: t.text, cursor: 'pointer', fontSize: '13px',
+            }}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <MoonStar size={16} />}
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
+          <button
+            onClick={() => onNavigate('gallery')}
+            style={{
+              padding: '8px 16px', borderRadius: '999px',
+              border: 'none', background: t.primary,
+              color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 500,
+            }}
+          >
+            Component Gallery
+          </button>
+        </div>
+      </nav>
+
+      {/* Content */}
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: `${S.sectionY} ${S.gutter}` }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+          <h1 style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 700, color: t.text, margin: '0 0 16px', letterSpacing: '-0.03em' }}>
+            Design Tokens
+          </h1>
+          <p style={{ fontSize: '18px', color: t.textMuted, maxWidth: '680px', margin: '0 auto', lineHeight: 1.7 }}>
+            Muted, desaturated palettes to reduce physiological arousal. No pure black. No warm warning colors.
+            Each token includes usage notes, text treatment guidance, and contrast checks.
+          </p>
+        </div>
+
+        {/* Light Mode Tokens */}
+        <section style={{ marginBottom: '80px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+            <Sun size={24} color={t.primary} />
+            <h2 style={{ fontSize: '24px', fontWeight: 600, color: t.text, margin: 0 }}>Light Mode Tokens</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            {lightTokens.map(({ name, hex, usage, text, contrast }) => (
+              <TokenSwatch
+                key={name}
+                name={name}
+                hex={hex}
+                usage={usage}
+                textTreatment={text}
+                contrast={contrast}
+                theme={theme}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Dark Mode Tokens */}
+        <section style={{ marginBottom: '80px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+            <MoonStar size={24} color={t.primary} />
+            <h2 style={{ fontSize: '24px', fontWeight: 600, color: t.text, margin: 0 }}>Dark Mode Tokens</h2>
+            <span style={{ fontSize: '13px', color: t.textMuted, marginLeft: '8px' }}>
+              For night, on-call, and triage contexts
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            {darkTokens.map(({ name, hex, usage, text, contrast }) => (
+              <TokenSwatch
+                key={name}
+                name={name}
+                hex={hex}
+                usage={usage}
+                textTreatment={text}
+                contrast={contrast}
+                theme={theme}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Contrast Guidance */}
+        <section style={{
+          background: t.surface, borderRadius: S.radius, padding: '32px',
+          border: `1px solid ${t.border}`
+        }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>
+            Contrast Validation Guidelines
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+            <div>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, color: t.text, margin: '0 0 12px' }}>Text on Background</h3>
+              <p style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.7, margin: 0 }}>
+                Dark text (#2F3134) on parchment (#F6F4F0) meets AA for all sizes. 
+                For small text below 14px, ensure 4.5:1 minimum.
+              </p>
+            </div>
+            <div>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, color: t.text, margin: '0 0 12px' }}>Text on Primary</h3>
+              <p style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.7, margin: 0 }}>
+                White/light text on teal (#3C7F8C) — AA at large sizes only (18px+ or 14px bold).
+                For smaller text, use Primary Soft with dark text.
+              </p>
+            </div>
+            <div>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, color: t.text, margin: '0 0 12px' }}>Danger Token Usage</h3>
+              <p style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.7, margin: 0 }}>
+                Danger (#B06565) signals without warm hues. Check contrast against parchment 
+                for legibility. Use sparingly to avoid alarm response.
+              </p>
+            </div>
+            <div>
+              <h3 style={{ fontSize: '15px', fontWeight: 600, color: t.text, margin: '0 0 12px' }}>Dark Mode Contrast</h3>
+              <p style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.7, margin: 0 }}>
+                Light text (#E7ECEF) on dark backgrounds (#15191C, #1F2529) maintains AA.
+                Primary accent (#6ABFCC) ensures visibility in low-light contexts.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
+
+// ─── Design Kit: Gallery Page ─────────────────────────────────────────────────
+interface GalleryPageProps {
+  theme: Theme
+  onToggleTheme: () => void
+  onNavigate: (view: View, componentId?: string) => void
+}
+
+function GalleryPage({ theme, onToggleTheme, onNavigate }: GalleryPageProps) {
+  const t = useTokens(theme)
+  const [search, setSearch] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<ComponentCategory | 'all'>('all')
+
+  const categories: { id: ComponentCategory | 'all'; label: string }[] = [
+    { id: 'all', label: 'All Components' },
+    { id: 'feedback', label: 'Feedback' },
+    { id: 'form', label: 'Form Controls' },
+    { id: 'layout', label: 'Layout' },
+    { id: 'overlay', label: 'Overlays' },
+    { id: 'navigation', label: 'Navigation' },
+    { id: 'foundation', label: 'Foundation' },
+  ]
+
+  const filteredComponents = COMPONENT_SPECS.filter((component) => {
+    const matchesSearch = component.name.toLowerCase().includes(search.toLowerCase()) ||
+                         component.purpose.toLowerCase().includes(search.toLowerCase())
+    const matchesCategory = selectedCategory === 'all' || component.category === selectedCategory
+    return matchesSearch && matchesCategory
+  })
+
+  return (
+    <div style={{ minHeight: '100vh', background: t.bg, fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: t.text }}>
+      {/* Header */}
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        background: theme === 'dark' ? 'rgba(21,25,28,0.92)' : 'rgba(246,244,240,0.92)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${t.border}`,
+        padding: `0 ${S.gutter}`, display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', minHeight: '72px', gap: '24px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => onNavigate('landing')}>
+          <div style={{
+            width: '34px', height: '34px', borderRadius: '12px',
+            background: t.primarySoft, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: t.primary,
+          }}><ShieldCheck size={18} strokeWidth={2} /></div>
+          <span style={{ fontWeight: 600, fontSize: '15px', color: t.text, letterSpacing: '-0.01em' }}>
+            trauma-informed-ui
+          </span>
+          <Badge variant="primary">Design Kit</Badge>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            onClick={onToggleTheme}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 14px', borderRadius: '999px',
+              border: `1px solid ${t.border}`, background: t.surface,
+              color: t.text, cursor: 'pointer', fontSize: '13px',
+            }}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <MoonStar size={16} />}
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
+          <button
+            onClick={() => onNavigate('tokens')}
+            style={{
+              padding: '8px 16px', borderRadius: '999px',
+              border: `1px solid ${t.border}`, background: 'transparent',
+              color: t.text, cursor: 'pointer', fontSize: '13px',
+            }}
+          >
+            Tokens
+          </button>
+          <button
+            onClick={() => onNavigate('gallery')}
+            style={{
+              padding: '8px 16px', borderRadius: '999px',
+              border: 'none', background: t.primary,
+              color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 500,
+            }}
+          >
+            Component Gallery
+          </button>
+        </div>
+      </nav>
+
+      {/* Content */}
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: `${S.sectionY} ${S.gutter}` }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <h1 style={{ fontSize: 'clamp(36px, 5vw, 48px)', fontWeight: 700, color: t.text, margin: '0 0 16px', letterSpacing: '-0.03em' }}>
+            Component Gallery
+          </h1>
+          <p style={{ fontSize: '18px', color: t.textMuted, maxWidth: '680px', margin: '0 auto', lineHeight: 1.7 }}>
+            Trauma-informed UI primitives with nervous-system-informed usage notes.
+            Each component includes anatomy, states, token mapping, and accessibility guidance.
+          </p>
+        </div>
+
+        {/* Search and Filter */}
+        <div style={{ marginBottom: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Search */}
+          <div style={{ position: 'relative', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+            <Search size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: t.textMuted }} />
+            <input
+              type="text"
+              placeholder="Search components..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: '100%', padding: '14px 16px 14px 48px',
+                borderRadius: '12px', border: `1px solid ${t.border}`,
+                background: t.surface, color: t.text,
+                fontSize: '16px', outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Category Filters */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {categories.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setSelectedCategory(id)}
+                style={{
+                  padding: '8px 16px', borderRadius: '999px',
+                  border: `1px solid ${selectedCategory === id ? t.primary : t.border}`,
+                  background: selectedCategory === id ? t.primary : t.surface,
+                  color: selectedCategory === id ? '#fff' : t.text,
+                  cursor: 'pointer', fontSize: '13px', fontWeight: 500,
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Component Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+          {filteredComponents.map((component) => (
+            <div
+              key={component.id}
+              onClick={() => onNavigate('component', component.id)}
+              style={{
+                background: t.surface,
+                borderRadius: '16px',
+                padding: '24px',
+                border: `1px solid ${t.border}`,
+                cursor: 'pointer',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = `0 8px 24px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(60,127,140,0.12)'}`
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              {/* Card Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <span style={{
+                  fontSize: '12px', fontWeight: 600, textTransform: 'uppercase',
+                  letterSpacing: '0.06em', color: t.primary,
+                  padding: '4px 10px', borderRadius: '999px', background: t.primarySoft,
+                }}>
+                  {CATEGORY_LABELS[component.category]}
+                </span>
+                <span style={{ fontSize: '12px', color: t.textMuted }}>
+                  {Object.keys(component.tokenMapping).length} tokens
+                </span>
+              </div>
+
+              {/* Component Name */}
+              <h3 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 8px' }}>
+                {component.name}
+              </h3>
+
+              {/* Tagline */}
+              <p style={{ fontSize: '14px', color: t.textMuted, margin: '0 0 16px', lineHeight: 1.6 }}>
+                {component.tagline}
+              </p>
+
+              {/* SAMHSA Principle */}
+              <div style={{ fontSize: '13px', color: t.textSubtle, marginBottom: '16px' }}>
+                <strong style={{ color: t.text }}>SAMHSA:</strong> {component.samhsaPrinciple}
+              </div>
+
+              {/* Purpose Preview */}
+              <p style={{ fontSize: '13px', color: t.textMuted, margin: '0 0 20px', lineHeight: 1.7 }}>
+                {component.purpose}
+              </p>
+
+              {/* Token Preview */}
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                {Object.entries(component.tokenMapping).slice(0, 3).map(([key, token]) => (
+                  <span
+                    key={key}
+                    style={{
+                      fontSize: '11px', padding: '4px 8px',
+                      borderRadius: '6px', background: t.bg,
+                      color: t.textMuted, border: `1px solid ${t.border}`,
+                    }}
+                  >
+                    {token}
+                  </span>
+                ))}
+                {Object.keys(component.tokenMapping).length > 3 && (
+                  <span style={{ fontSize: '11px', color: t.textSubtle, padding: '4px 8px' }}>
+                    +{Object.keys(component.tokenMapping).length - 3} more
+                  </span>
+                )}
+              </div>
+
+              {/* View Details Button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: t.primary, fontSize: '14px', fontWeight: 500 }}>
+                <span>View full spec</span>
+                <ArrowRight size={16} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {filteredComponents.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+            <h3 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 8px' }}>
+              No components found
+            </h3>
+            <p style={{ fontSize: '15px', color: t.textMuted, margin: 0 }}>
+              Try adjusting your search or filter criteria
+            </p>
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
+
+// ─── Design Kit: Component Detail Page ───────────────────────────────────────
+interface ComponentDetailProps {
+  componentId: string
+  theme: Theme
+  onToggleTheme: () => void
+  onNavigate: (view: View, componentId?: string) => void
+}
+
+function ComponentDetail({ componentId, theme, onToggleTheme, onNavigate }: ComponentDetailProps) {
+  const t = useTokens(theme)
+  const component = COMPONENT_SPECS.find(c => c.id === componentId)
+
+  if (!component) {
+    return (
+      <div style={{ minHeight: '100vh', background: t.bg, color: t.text, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ fontSize: '24px', marginBottom: '16px' }}>Component not found</h1>
+          <button onClick={() => onNavigate('gallery')} style={{ padding: '12px 24px', borderRadius: '8px', background: t.primary, color: '#fff', border: 'none', cursor: 'pointer' }}>
+            Back to Gallery
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: t.bg, fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: t.text }}>
+      {/* Header */}
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        background: theme === 'dark' ? 'rgba(21,25,28,0.92)' : 'rgba(246,244,240,0.92)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${t.border}`,
+        padding: `0 ${S.gutter}`, display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', minHeight: '72px', gap: '24px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => onNavigate('landing')}>
+          <div style={{
+            width: '34px', height: '34px', borderRadius: '12px',
+            background: t.primarySoft, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: t.primary,
+          }}><ShieldCheck size={18} strokeWidth={2} /></div>
+          <span style={{ fontWeight: 600, fontSize: '15px', color: t.text, letterSpacing: '-0.01em' }}>
+            trauma-informed-ui
+          </span>
+          <Badge variant="primary">Design Kit</Badge>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={() => onNavigate('gallery')} style={{ padding: '8px 16px', borderRadius: '999px', border: `1px solid ${t.border}`, background: 'transparent', color: t.text, cursor: 'pointer', fontSize: '13px' }}>
+            <ChevronLeft size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+            Back to Gallery
+          </button>
+          <button onClick={onToggleTheme} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '999px', border: `1px solid ${t.border}`, background: t.surface, color: t.text, cursor: 'pointer', fontSize: '13px' }}>
+            {theme === 'dark' ? <Sun size={16} /> : <MoonStar size={16} />}
+          </button>
+        </div>
+      </nav>
+
+      {/* Content */}
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: `${S.sectionY} ${S.gutter}` }}>
+        {/* Breadcrumb */}
+        <div style={{ marginBottom: '32px', fontSize: '14px', color: t.textMuted }}>
+          <span style={{ cursor: 'pointer' }} onClick={() => onNavigate('gallery')}>Components</span>
+          <span style={{ margin: '0 8px' }}>/</span>
+          <span style={{ color: t.text }}>{component.name}</span>
+        </div>
+
+        {/* Header */}
+        <div style={{ marginBottom: '48px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <span style={{
+              fontSize: '12px', fontWeight: 600, textTransform: 'uppercase',
+              letterSpacing: '0.06em', color: t.primary,
+              padding: '6px 12px', borderRadius: '999px', background: t.primarySoft,
+            }}>
+              {CATEGORY_LABELS[component.category]}
+            </span>
+            <span style={{ fontSize: '14px', color: t.textMuted }}>
+              SAMHSA: {component.samhsaPrinciple}
+            </span>
+          </div>
+          <h1 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 700, color: t.text, margin: '0 0 12px', letterSpacing: '-0.03em' }}>
+            {component.name}
+          </h1>
+          <p style={{ fontSize: '20px', color: t.primary, fontWeight: 600, margin: '0 0 16px' }}>
+            {component.tagline}
+          </p>
+          <p style={{ fontSize: '16px', color: t.textMuted, maxWidth: '680px', lineHeight: 1.7 }}>
+            {component.purpose}
+          </p>
+        </div>
+
+        {/* Two Column Layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px' }}>
+          {/* Left Column - Visuals */}
+          <div>
+            {/* States */}
+            <section style={{ marginBottom: '48px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>States</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {component.states.map((state, index) => (
+                  <div key={index} style={{
+                    background: t.surface, borderRadius: '12px', padding: '20px',
+                    border: `1px solid ${t.border}`,
+                  }}>
+                    <span style={{
+                      fontSize: '12px', fontWeight: 600, textTransform: 'uppercase',
+                      letterSpacing: '0.06em', color: t.textMuted, marginBottom: '8px', display: 'block',
+                    }}>
+                      State {index + 1}
+                    </span>
+                    <span style={{ fontSize: '15px', color: t.text }}>{state}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Anatomy */}
+            <section style={{ marginBottom: '48px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Anatomy</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {component.anatomy.map((part, index) => (
+                  <div key={index} style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    background: t.surface, borderRadius: '10px', padding: '16px',
+                    border: `1px solid ${t.border}`,
+                  }}>
+                    <span style={{
+                      width: '28px', height: '28px', borderRadius: '50%', background: t.primarySoft,
+                      color: t.primary, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '13px', fontWeight: 600,
+                    }}>{index + 1}</span>
+                    <span style={{ fontSize: '15px', color: t.text }}>{part}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column - Specs */}
+          <div>
+            {/* Props */}
+            <section style={{ marginBottom: '48px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Props & Content</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {component.props.map((prop) => (
+                  <div key={prop.name} style={{
+                    background: t.surface, borderRadius: '10px', padding: '16px',
+                    border: `1px solid ${t.border}`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <code style={{ fontSize: '14px', color: t.primary, fontFamily: 'monospace', fontWeight: 600 }}>
+                        {prop.name}
+                      </code>
+                      <span style={{
+                        fontSize: '11px', padding: '2px 8px', borderRadius: '4px',
+                        background: t.primarySoft, color: t.primary,
+                      }}>{prop.type}</span>
+                      {prop.required && (
+                        <span style={{
+                          fontSize: '11px', padding: '2px 8px', borderRadius: '4px',
+                          background: t.danger + '20', color: t.danger,
+                        }}>required</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: '14px', color: t.textMuted, margin: 0 }}>{prop.description}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Token Mapping */}
+            <section style={{ marginBottom: '48px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Token Mapping</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {Object.entries(component.tokenMapping).map(([key, token]) => (
+                  <div key={key} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: t.surface, borderRadius: '10px', padding: '14px 16px',
+                    border: `1px solid ${t.border}`,
+                  }}>
+                    <span style={{ fontSize: '14px', color: t.text }}>{key}</span>
+                    <code style={{ fontSize: '13px', color: t.primary, fontFamily: 'monospace', background: t.primarySoft, padding: '4px 8px', borderRadius: '4px' }}>
+                      {token}
+                    </code>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Nervous System Notes */}
+            <section style={{ marginBottom: '48px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Nervous-System Notes</h2>
+              <ul style={{ margin: 0, padding: '0 0 0 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {component.nervousSystemNotes.map((note, index) => (
+                  <li key={index} style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.7 }}>{note}</li>
+                ))}
+              </ul>
+            </section>
+
+            {/* Accessibility */}
+            <section style={{ marginBottom: '48px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Accessibility</h2>
+              <ul style={{ margin: 0, padding: '0 0 0 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {component.accessibilityNotes.map((note, index) => (
+                  <li key={index} style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.7 }}>{note}</li>
+                ))}
+              </ul>
+            </section>
+
+            {/* Contrast Checks */}
+            <section style={{ marginBottom: '48px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Contrast Checks</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {component.contrastChecks.map((check, index) => (
+                  <div key={index} style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    background: t.surface, borderRadius: '10px', padding: '14px 16px',
+                    border: `1px solid ${t.border}`,
+                  }}>
+                    <CheckCircle2 size={18} color={t.secondary} />
+                    <span style={{ fontSize: '14px', color: t.textMuted }}>{check}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Calm Copy */}
+            <section style={{
+              background: t.primarySoft, borderRadius: S.radius, padding: '24px',
+              border: `1px solid ${t.border}`,
+            }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: t.text, margin: '0 0 16px' }}>Calm Copy Guidance</h2>
+              <div style={{ marginBottom: '16px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: t.textMuted }}>Example</span>
+                <p style={{ fontSize: '15px', color: t.text, margin: '8px 0 0', fontStyle: 'italic' }}>"{component.calmCopy.example}"</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <span style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: t.secondary }}>Do</span>
+                  <ul style={{ margin: '8px 0 0', padding: '0 0 0 18px', fontSize: '13px', color: t.textMuted }}>
+                    {component.calmCopy.do.map((item, i) => <li key={i}>{item}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <span style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: t.danger }}>Don't</span>
+                  <ul style={{ margin: '8px 0 0', padding: '0 0 0 18px', fontSize: '13px', color: t.textMuted }}>
+                    {component.calmCopy.dont.map((item, i) => <li key={i}>{item}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
+
 // ─── Token palette ────────────────────────────────────────────────────────────
 const PALETTE = [
   { name: '--ti-bg', hex: '#F6F4F0', label: 'Background', usage: 'Page background', contrast: 'Use dark text only' },
@@ -924,7 +2040,7 @@ function Footer() {
 }
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
-function LandingPage({ activeHash }: { activeHash: string }) {
+function LandingPage({ activeHash, onNavigate }: { activeHash: string; onNavigate: (view: View, componentId?: string) => void }) {
   return (
     <div style={{ minHeight: '100vh', background: T.bg, fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: T.text }}>
       <Nav providerPage={false} activeHash={activeHash} />
@@ -952,30 +2068,81 @@ function ProviderPage() {
 }
 
 export default function App() {
+  const [view, setView] = useState<View>('landing')
+  const [activeComponentId, setActiveComponentId] = useState<string | null>(null)
+  const [theme, setTheme] = useState<Theme>('light')
   const [hash, setHash] = useState(() => window.location.hash)
 
   useEffect(() => {
     const onHashChange = () => setHash(window.location.hash)
     window.addEventListener('hashchange', onHashChange)
-
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
 
-  const providerPage = useMemo(() => hash === '#provider-focus-page', [hash])
+  // Handle provider-focus-page hash for backward compatibility
+  const isProviderPage = hash === '#provider-focus-page'
 
-  useEffect(() => {
-    if (!providerPage && hash && hash !== '#provider-focus-page') {
-      window.setTimeout(() => {
-        const target = document.getElementById(hash.replace('#', ''))
-        target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 0)
+  const handleNavigate = useCallback((newView: View, componentId?: string) => {
+    setView(newView)
+    if (componentId) {
+      setActiveComponentId(componentId)
     }
-  }, [hash, providerPage])
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [])
+
+  const handleToggleTheme = useCallback(() => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light')
+  }, [])
+
+  // If hash is provider-focus-page, render ProviderPage directly
+  if (isProviderPage) {
+    return (
+      <ToastProvider>
+        <TraumaInformedProvider>
+          <ProviderPage />
+        </TraumaInformedProvider>
+      </ToastProvider>
+    )
+  }
+
+  // Render based on current view
+  const renderContent = () => {
+    switch (view) {
+      case 'tokens':
+        return (
+          <TokensPage
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
+            onNavigate={handleNavigate}
+          />
+        )
+      case 'gallery':
+        return (
+          <GalleryPage
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
+            onNavigate={handleNavigate}
+          />
+        )
+      case 'component':
+        return (
+          <ComponentDetail
+            componentId={activeComponentId || 'regret-button'}
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
+            onNavigate={handleNavigate}
+          />
+        )
+      case 'landing':
+      default:
+        return <LandingPage activeHash={hash || '#top'} onNavigate={handleNavigate} />
+    }
+  }
 
   return (
     <ToastProvider>
       <TraumaInformedProvider>
-        {providerPage ? <ProviderPage /> : <LandingPage activeHash={hash || '#top'} />}
+        {renderContent()}
       </TraumaInformedProvider>
     </ToastProvider>
   )
