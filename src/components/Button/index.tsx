@@ -41,10 +41,10 @@ const VARIANT_STYLES: Record<ButtonVariant, React.CSSProperties> = {
 }
 
 const VARIANT_HOVER: Record<ButtonVariant, React.CSSProperties> = {
-  primary:     { background: '#2D6473', borderColor: '#2D6473' },
-  secondary:   { background: '#D1E5E8', borderColor: '#3C7F8C' },
-  destructive: { background: '#8C4C4C', borderColor: '#8C4C4C' },
-  ghost:       { background: 'rgba(0,0,0,0.04)', borderColor: 'transparent' },
+  primary:     { background: '#2D6473', border: '1.5px solid #2D6473' },
+  secondary:   { background: '#D1E5E8', border: '1.5px solid #3C7F8C' },
+  destructive: { background: '#8C4C4C', border: '1.5px solid #8C4C4C' },
+  ghost:       { background: 'rgba(0,0,0,0.04)', border: '1.5px solid transparent' },
 }
 
 const SIZE_STYLES: Record<ButtonSize, React.CSSProperties> = {

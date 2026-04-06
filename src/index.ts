@@ -1,3 +1,8 @@
+// ─── Design tokens ───────────────────────────────────────────────────────────
+
+export { PALETTE, FEEDBACK_TOKENS, SURFACE_TOKENS } from './tokens'
+export type { FeedbackVariant } from './tokens'
+
 // ─── Foundations / Core ──────────────────────────────────────────────────────
 
 export { Button } from './components/Button'

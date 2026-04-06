@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { FEEDBACK_TOKENS } from '../../tokens'
 
 export type ToastVariant = 'info' | 'success' | 'warning' | 'danger'
 
@@ -17,12 +18,8 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null)
 
-const TOAST_COLORS: Record<ToastVariant, { bg: string; border: string; color: string; icon: string }> = {
-  info:    { bg: '#D1E5E8', border: '#3C7F8C', color: '#2D6473', icon: '#3C7F8C' },
-  success: { bg: '#D6EAE0', border: '#4E8563', color: '#2E6647', icon: '#4E8563' },
-  warning: { bg: '#F4EDDB', border: '#C39A4A', color: '#8B6830', icon: '#C39A4A' },
-  danger:  { bg: '#F2E4E4', border: '#B06565', color: '#8C4C4C', icon: '#B06565' },
-}
+// Shared with Alert — single source of truth in src/tokens.ts
+const TOAST_COLORS = FEEDBACK_TOKENS
 
 const TOAST_ICONS: Record<ToastVariant, React.ReactNode> = {
   info: (
@@ -50,12 +47,20 @@ const TOAST_ICONS: Record<ToastVariant, React.ReactNode> = {
 
 // ─── Individual Toast ────────────────────────────────────────────────────────
 
+/**
+ * Carbon Design System-aligned notification anatomy:
+ * - Slides UP from below (not from the right) for a calmer entry
+ * - Coloured TOP border (3px) as the primary identity signal
+ * - Full surrounding border (1px) for structure without harshness
+ * - Dismiss button always fully visible — no opacity-hiding
+ * - Positioned bottom-right so it never competes with primary content
+ */
 function ToastEntry({ item, onDismiss }: { item: ToastItem; onDismiss: (id: string) => void }) {
   const [visible, setVisible] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const duration = item.duration ?? 5000
   const variant = item.variant ?? 'info'
-  const { bg, border, color, icon: iconColor } = TOAST_COLORS[variant]
+  const { gradient, border, titleColor, bodyColor, iconColor } = TOAST_COLORS[variant]
 
   const handleDismiss = useCallback(() => {
     setVisible(false)
@@ -77,32 +82,35 @@ function ToastEntry({ item, onDismiss }: { item: ToastItem; onDismiss: (id: stri
         display: 'flex',
         alignItems: 'flex-start',
         gap: '10px',
-        padding: '12px 14px',
-        background: bg,
+        padding: '14px 16px',
+        background: gradient,
+        /* Full border for structure, then override top with 3px accent */
         border: `1px solid ${border}`,
-        borderLeft: `4px solid ${border}`,
+        borderTop: `3px solid ${border}`,
         borderRadius: '12px',
-        boxShadow: '0 4px 16px rgba(47,49,52,0.12)',
-        maxWidth: '360px',
+        boxShadow: '0 8px 24px rgba(47,49,52,0.15)',
+        maxWidth: '400px',
         width: '100%',
-        transform: visible ? 'translateX(0)' : 'translateX(calc(100% + 24px))',
+        /* Slide UP animation — calmer than sliding from the right */
+        transform: visible ? 'translateY(0)' : 'translateY(12px)',
         opacity: visible ? 1 : 0,
         transition: 'transform 250ms ease, opacity 250ms ease',
       }}
     >
-      <span style={{ color: iconColor, flexShrink: 0, marginTop: '1px', display: 'flex' }}>
+      <span style={{ color: iconColor, flexShrink: 0, marginTop: '2px', display: 'flex' }}>
         {TOAST_ICONS[variant]}
       </span>
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {item.title && (
-          <p style={{ fontSize: '13px', fontWeight: 600, color, margin: '0 0 2px', lineHeight: 1.4 }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: titleColor, margin: '0 0 2px', lineHeight: 1.4 }}>
             {item.title}
           </p>
         )}
-        <p style={{ fontSize: '13px', color, margin: 0, lineHeight: 1.6 }}>{item.message}</p>
+        <p style={{ fontSize: '13px', color: bodyColor, margin: 0, lineHeight: 1.6 }}>{item.message}</p>
       </div>
 
+      {/* Dismiss — always fully visible, hover shows background tint */}
       <button
         onClick={handleDismiss}
         aria-label="Dismiss notification"
@@ -111,15 +119,15 @@ function ToastEntry({ item, onDismiss }: { item: ToastItem; onDismiss: (id: stri
           background: 'none',
           border: 'none',
           cursor: 'pointer',
-          color,
-          opacity: 0.6,
-          padding: '2px',
+          color: bodyColor,
+          opacity: 1,
+          padding: '4px',
           borderRadius: '4px',
           display: 'flex',
-          transition: 'opacity 150ms ease',
+          transition: 'background 150ms ease',
         }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '1')}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '0.6')}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.07)')}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'none')}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -135,7 +143,11 @@ function ToastEntry({ item, onDismiss }: { item: ToastItem; onDismiss: (id: stri
  * ToastProvider
  *
  * Wrap your app (or the TraumaInformedProvider subtree) to enable toasts.
- * Renders a fixed portal at the top-right corner.
+ *
+ * Carbon Design-aligned positioning:
+ * - Fixed portal at the BOTTOM-RIGHT corner (not top-right)
+ * - column-reverse stacking: newest toast appears at the bottom, older ones stack up
+ * - This follows the natural reading direction and does not obscure page headers
  *
  * @example
  * <ToastProvider>
@@ -159,16 +171,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ toast, dismiss }}>
       {children}
 
-      {/* Toast region */}
+      {/* Toast region — bottom-right, newest at bottom, older stacked above */}
       <div
         aria-label="Notifications"
         style={{
           position: 'fixed',
-          top: '24px',
+          bottom: '24px',
           right: '24px',
           zIndex: 1100,
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: 'column-reverse',
           gap: '10px',
           alignItems: 'flex-end',
           pointerEvents: 'none',

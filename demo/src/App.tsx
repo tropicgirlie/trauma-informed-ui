@@ -11,9 +11,11 @@ import {
   Layers3,
   MessageCircleHeart,
   MoonStar,
+  Palette,
   PanelTop,
   Search,
   ShieldCheck,
+  ShieldAlert,
   SlidersHorizontal,
   Sparkles,
   Sun,
@@ -81,6 +83,54 @@ const DARK_TOKENS = {
 type Theme = 'light' | 'dark'
 
 const useTokens = (theme: Theme) => theme === 'dark' ? DARK_TOKENS : LIGHT_TOKENS
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < breakpoint : false)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
+
+function GlobalStyles() {
+  return (
+    <style>{`
+      *:focus-visible {
+        outline: 3px solid #3C7F8C;
+        outline-offset: 2px;
+        border-radius: 3px;
+      }
+      #ti-skip-link:not(:focus) {
+        position: absolute;
+        width: 1px; height: 1px;
+        padding: 0; margin: -1px;
+        overflow: hidden;
+        clip: rect(0,0,0,0);
+        white-space: nowrap;
+        border: 0;
+      }
+      #ti-skip-link:focus {
+        position: fixed;
+        top: 8px; left: 8px;
+        z-index: 9999;
+        padding: 10px 20px;
+        background: #3C7F8C;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 8px;
+        text-decoration: none;
+        box-shadow: 0 4px 16px rgba(60,127,140,0.3);
+      }
+      @media (max-width: 767px) {
+        .ti-principles-grid { grid-template-columns: 1fr !important; }
+        .ti-principles-cell-divider { border-right: none !important; padding-right: 0 !important; }
+      }
+    `}</style>
+  )
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SPACING & LAYOUT
@@ -419,6 +469,83 @@ const COMPONENT_SPECS: ComponentSpec[] = [
       dont: ['Vague purpose', 'Mandatory fields without explanation', 'Shaming error language'],
     },
   },
+  {
+    id: 'layout-grid',
+    name: 'LayoutGrid',
+    category: 'foundation',
+    tagline: 'Room to breathe',
+    samhsaPrinciple: 'Safety',
+    purpose: 'Spacious, predictable structural foundations preventing visual crowding and cognitive overload.',
+    anatomy: ['Spacious grid container', 'Consistent gutters', 'Responsive breakpoints', 'Safe content zones'],
+    props: [
+      { name: 'columns', type: 'number | ResponsiveValue', description: 'Grid column count', required: false },
+      { name: 'gap', type: 'SpacingToken', description: 'Gap between grid cells', required: false },
+      { name: 'maxWidth', type: 'string', description: 'Maximum container width', required: false },
+    ],
+    states: ['Default', 'Collapsed (mobile)', 'Full bleed'],
+    tokenMapping: {
+      'Background': 'var(--background)',
+      'Surface': 'var(--surface)',
+      'Border': 'var(--border)',
+    },
+    nervousSystemNotes: [
+      'Generous whitespace reduces visual overwhelm',
+      'Predictable layout reduces cognitive scanning load',
+      'Consistent gutters create a sense of order and safety',
+    ],
+    accessibilityNotes: [
+      'Logical reading order preserved in DOM',
+      'Layout does not override focus order',
+    ],
+    contrastChecks: [
+      'Background/surface separation meets 1.3:1 minimum',
+    ],
+    calmCopy: {
+      example: 'Spacious layout with breathing room between sections.',
+      do: ['Use generous spacing', 'Keep structure predictable', 'Allow content to breathe'],
+      dont: ['Pack elements tightly', 'Use inconsistent gutters', 'Change layout unexpectedly'],
+    },
+  },
+  {
+    id: 'subtle-toast',
+    name: 'SubtleToast',
+    category: 'overlay',
+    tagline: 'Noticed, not alarmed',
+    samhsaPrinciple: 'Safety',
+    purpose: 'Non-intrusive notifications that do not demand immediate attention or cover vital information.',
+    anatomy: ['Toast container', 'Status icon', 'Message text', 'Optional action link', 'Auto-dismiss timer'],
+    props: [
+      { name: 'message', type: 'string', description: 'Notification text', required: true },
+      { name: 'variant', type: 'info | success | warning', description: 'Semantic tone', required: false },
+      { name: 'duration', type: 'number', description: 'Auto-dismiss in ms (default: 4000)', required: false },
+      { name: 'position', type: 'bottom-right | bottom-center | top-right', description: 'Screen position', required: false },
+    ],
+    states: ['Entering', 'Visible', 'Dismissing', 'Dismissed'],
+    tokenMapping: {
+      'Container': 'var(--surface)',
+      'Text': 'var(--text)',
+      'Shadow': 'var(--shadow-sm)',
+    },
+    nervousSystemNotes: [
+      'Appears at screen edge, never covering primary content',
+      'Auto-dismisses — user never has to interact',
+      'No alarming sounds, flashes, or urgent red styling',
+    ],
+    accessibilityNotes: [
+      'Uses aria-live="polite" for non-urgent announcements',
+      'Focus not stolen from current task',
+      'Dismiss button available for keyboard users',
+    ],
+    contrastChecks: [
+      'Toast text on surface meets 4.5:1 AA',
+      'No reliance on color alone for meaning',
+    ],
+    calmCopy: {
+      example: 'Changes saved — you can return to this at any time.',
+      do: ['Use calm, informational language', 'Position away from primary action areas', 'Auto-dismiss without requiring action'],
+      dont: ['Use urgent language', 'Cover form fields or buttons', 'Loop or repeat notifications'],
+    },
+  },
 ]
 
 const CATEGORY_LABELS: Record<ComponentCategory, string> = {
@@ -587,11 +714,321 @@ const PROVIDER_FOCUS_PILLARS = [
 const NAV_LINKS = [
   { href: '#principles', label: 'Principles' },
   { href: '#library', label: 'The Library' },
-  { href: '#live-components', label: 'Live Components' },
-  { href: '#global-alignment', label: 'Global Alignment' },
-  { href: '#provider-focus', label: 'Care Worker Focus' },
+  { href: '#live-components', label: 'Components' },
+  { href: '#global-alignment', label: 'Global' },
+  { href: '#provider-focus', label: 'Provider' },
   { href: '#install', label: 'Install' },
 ]
+
+// ─── Design Kit: Shared Doc Nav ──────────────────────────────────────────────
+interface DocNavProps {
+  activeView: View
+  theme: Theme
+  onToggleTheme: () => void
+  onNavigate: (view: View, componentId?: string) => void
+}
+
+function DocNav({ activeView, theme, onToggleTheme, onNavigate }: DocNavProps) {
+  const t = useTokens(theme)
+  const isMobile = useIsMobile()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const TEAL = '#4CE6D9'
+
+  const navBtnBase: CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: '6px',
+    padding: '8px 12px', borderRadius: '8px',
+    border: 'none', cursor: 'pointer',
+    fontSize: '14px', fontWeight: 500,
+    transition: 'background 0.15s',
+    background: 'transparent',
+    textAlign: 'left',
+  }
+
+  const handleNav = (view: View) => {
+    setMenuOpen(false)
+    onNavigate(view)
+  }
+
+  const navLinks = (
+    <>
+      <button
+        onClick={() => handleNav('tokens')}
+        style={{
+          ...navBtnBase,
+          background: activeView === 'tokens' ? t.surface : 'transparent',
+          color: activeView === 'tokens' ? t.text : t.textMuted,
+          width: isMobile ? '100%' : 'auto',
+        }}
+      >
+        <Palette size={15} strokeWidth={2} />
+        Tokens
+      </button>
+      <button
+        onClick={() => handleNav('gallery')}
+        style={{
+          ...navBtnBase,
+          background: activeView === 'gallery' ? t.surface : 'transparent',
+          color: activeView === 'gallery' ? t.text : t.textMuted,
+          width: isMobile ? '100%' : 'auto',
+        }}
+      >
+        <Layers3 size={15} strokeWidth={2} />
+        Gallery
+      </button>
+      <button
+        onClick={() => handleNav('tokens')}
+        aria-label="View component documentation"
+        style={{
+          ...navBtnBase,
+          background: 'transparent',
+          color: t.textMuted,
+          width: isMobile ? '100%' : 'auto',
+        }}
+      >
+        <BookOpen size={15} strokeWidth={2} />
+        Docs
+      </button>
+    </>
+  )
+
+  const searchAndTheme = (
+    <>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '8px',
+        padding: '0 12px', height: '34px',
+        border: `1px solid ${t.border}`,
+        borderRadius: '8px', background: t.surface,
+        width: isMobile ? '100%' : '196px',
+        boxShadow: `0 1px 2px rgba(23,26,31,0.05)`,
+      }}>
+        <Search size={14} color={t.textMuted} aria-hidden="true" />
+        <input
+          type="text"
+          aria-label="Search documentation"
+          placeholder="Search docs..."
+          readOnly
+          style={{
+            background: 'transparent', border: 'none', outline: 'none',
+            fontSize: '13px', color: t.textMuted, width: '100%', cursor: 'default',
+          }}
+        />
+      </div>
+      <button
+        onClick={onToggleTheme}
+        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        style={{
+          width: '34px', height: '34px', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: '8px', border: `1px solid ${t.border}`,
+          background: 'transparent', cursor: 'pointer', color: t.textMuted,
+        }}
+      >
+        {theme === 'dark' ? <Sun size={16} strokeWidth={2} /> : <MoonStar size={16} strokeWidth={2} />}
+      </button>
+    </>
+  )
+
+  return (
+    <>
+      <nav aria-label="Documentation navigation" style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        background: theme === 'dark' ? 'rgba(21,25,28,0.95)' : 'rgba(246,244,240,0.95)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${t.border}`,
+        padding: '0 24px',
+        display: 'flex', alignItems: 'center',
+        height: '64px', gap: '0',
+      }}>
+        {/* Logo */}
+        <button
+          onClick={() => onNavigate('landing')}
+          aria-label="Go to home page"
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+            marginRight: isMobile ? '0' : '32px', flexShrink: 0,
+            background: 'none', border: 'none', padding: 0,
+          }}
+        >
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '8px',
+            background: TEAL, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <ShieldCheck size={18} color="#fff" strokeWidth={2.5} />
+          </div>
+          {!isMobile && (
+            <span style={{ fontWeight: 700, fontSize: '16px', color: theme === 'dark' ? TEAL : t.primary, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+              Trauma-Informed UI
+            </span>
+          )}
+        </button>
+
+        {/* Desktop: Nav links */}
+        {!isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flex: 1 }}>
+            {navLinks}
+          </div>
+        )}
+
+        {/* Desktop: Search + theme toggle */}
+        {!isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            {searchAndTheme}
+          </div>
+        )}
+
+        {/* Mobile: Spacer + hamburger */}
+        {isMobile && (
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {searchAndTheme}
+            <button
+              onClick={() => setMenuOpen(o => !o)}
+              aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={menuOpen}
+              style={{
+                width: '34px', height: '34px', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: '8px', border: `1px solid ${t.border}`,
+                background: menuOpen ? t.surface : 'transparent',
+                cursor: 'pointer', color: t.text,
+              }}
+            >
+              {menuOpen ? <X size={18} strokeWidth={2} /> : <Menu size={18} strokeWidth={2} />}
+            </button>
+          </div>
+        )}
+      </nav>
+
+      {/* Mobile dropdown menu */}
+      {isMobile && menuOpen && (
+        <div style={{
+          position: 'fixed',
+          top: '64px', left: 0, right: 0,
+          background: theme === 'dark' ? 'rgba(21,25,28,0.98)' : 'rgba(246,244,240,0.98)',
+          borderBottom: `1px solid ${t.border}`,
+          padding: '12px 20px 20px',
+          zIndex: 99,
+          display: 'flex', flexDirection: 'column', gap: '4px',
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+        }}>
+          {navLinks}
+        </div>
+      )}
+    </>
+  )
+}
+
+// ─── Design Kit: Component Card Thumbnail ────────────────────────────────────
+function ComponentThumbnail({ id, t, theme }: { id: string; t: typeof LIGHT_TOKENS; theme: Theme }) {
+  const TEAL = '#4CE6D9'
+  const bg = theme === 'dark' ? 'rgba(250,250,251,0.04)' : 'rgba(250,250,251,0.5)'
+  const base: CSSProperties = { width: '100%', height: '160px', background: bg, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+
+  if (id === 'regret-button') return (
+    <div aria-hidden="true" style={base}>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ background: TEAL, borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Submit Feedback</div>
+        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: '8px', padding: '7px 10px', fontSize: '11px', color: t.textMuted, display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <span style={{ fontSize: '10px' }}>↩</span> Undo (5s)
+        </div>
+      </div>
+    </div>
+  )
+
+  if (id === 'consent-stepper') return (
+    <div aria-hidden="true" style={base}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {[TEAL, TEAL, 'transparent', 'transparent'].map((bg, i) => (
+          <React.Fragment key={i}>
+            <div style={{ width: '16px', height: '16px', borderRadius: '8px', background: bg, border: `2px solid ${TEAL}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {i < 2 && <div style={{ width: '6px', height: '6px', borderRadius: '3px', background: '#fff' }} />}
+            </div>
+            {i < 3 && <div style={{ width: '24px', height: '2px', background: i < 1 ? TEAL : t.border }} />}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  )
+
+  if (id === 'disclosure-card') return (
+    <div aria-hidden="true" style={base}>
+      <div style={{ border: `1px dashed ${t.border}`, borderRadius: '8px', padding: '12px 16px', width: '70%', background: theme === 'dark' ? t.surface : '#fafafb' }}>
+        <div style={{ height: '8px', background: `${t.textMuted}33`, borderRadius: '4px', marginBottom: '8px', width: '60%' }} />
+        <div style={{ height: '6px', background: `${t.textMuted}22`, borderRadius: '3px', marginBottom: '6px' }} />
+        <div style={{ height: '6px', background: `${t.textMuted}22`, borderRadius: '3px', width: '80%' }} />
+      </div>
+    </div>
+  )
+
+  if (id === 'safe-exit') return (
+    <div aria-hidden="true" style={base}>
+      <div style={{ background: 'rgba(242,90,90,0.1)', border: '1px solid rgba(242,90,90,0.2)', borderRadius: '24px', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ width: '40px', height: '8px', background: 'rgba(242,90,90,0.4)', borderRadius: '4px' }} />
+        <div style={{ fontSize: '11px', color: t.textMuted, opacity: 0.7 }}>⬚</div>
+      </div>
+    </div>
+  )
+
+  if (id === 'breathing-guide') return (
+    <div aria-hidden="true" style={base}>
+      {[64, 40, 16].map((size, i) => (
+        <div key={i} style={{
+          position: 'absolute',
+          width: size, height: size, borderRadius: size / 2,
+          background: i === 0 ? 'rgba(167,134,234,0.1)' : i === 1 ? 'rgba(167,134,234,0.3)' : '#a786ea',
+        }} />
+      ))}
+    </div>
+  )
+
+  if (id === 'calming-message') return (
+    <div aria-hidden="true" style={base}>
+      <div style={{ border: `1px solid rgba(76,230,217,0.2)`, borderRadius: '8px', padding: '12px', width: '70%', background: '#edfdfb' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+          <div style={{ width: '14px', height: '14px', background: 'rgba(76,230,217,0.3)', borderRadius: '7px', flexShrink: 0, marginTop: '1px' }} />
+          <div>
+            <div style={{ height: '7px', background: 'rgba(76,230,217,0.4)', borderRadius: '3px', marginBottom: '6px', width: '70%' }} />
+            <div style={{ height: '5px', background: 'rgba(76,230,217,0.25)', borderRadius: '2px', width: '90%' }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (id === 'safe-input') return (
+    <div aria-hidden="true" style={base}>
+      <div style={{ width: '70%' }}>
+        <div style={{ height: '7px', background: `${t.textMuted}40`, borderRadius: '3px', marginBottom: '8px', width: '40%' }} />
+        <div style={{ background: '#fff', border: `1px solid ${t.border}`, borderRadius: '6px', height: '32px', padding: '0 10px', display: 'flex', alignItems: 'center' }}>
+          <div style={{ height: '6px', background: `${t.textMuted}25`, borderRadius: '3px', width: '60%' }} />
+        </div>
+      </div>
+    </div>
+  )
+
+  if (id === 'layout-grid') return (
+    <div aria-hidden="true" style={base}>
+      <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr', gap: '6px', width: '70%' }}>
+        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: '4px', height: '56px' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: '4px', height: '24px' }} />
+          <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: '4px', height: '24px' }} />
+        </div>
+      </div>
+    </div>
+  )
+
+  if (id === 'subtle-toast') return (
+    <div aria-hidden="true" style={base}>
+      <div style={{ position: 'absolute', bottom: '20px', right: '20px', background: theme === 'dark' ? t.surface : '#fafafb', border: `1px solid ${t.border}`, borderRadius: '8px', padding: '10px 14px', boxShadow: '0 1px 4px rgba(23,26,31,0.1)', width: '100px' }}>
+        <div style={{ height: '6px', background: `${t.textMuted}40`, borderRadius: '3px', width: '80%' }} />
+      </div>
+    </div>
+  )
+
+  return <div style={base} />
+}
 
 function IconWrap({ children }: { children: ReactNode }) {
   return (
@@ -614,146 +1051,199 @@ function IconWrap({ children }: { children: ReactNode }) {
 
 // ─── Nav ─────────────────────────────────────────────────────────────────────
 function Nav({ providerPage, activeHash }: { providerPage: boolean, activeHash: string }) {
+  const isMobile = useIsMobile()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const allLinks = (
+    <>
+      {NAV_LINKS.map(({ href, label }) => (
+        <a
+          key={href}
+          href={href}
+          aria-current={activeHash === href ? 'page' : undefined}
+          onClick={() => setMenuOpen(false)}
+          style={{
+            fontSize: '13px',
+            color: activeHash === href ? T.primary : T.textMuted,
+            textDecoration: 'none',
+            padding: '7px 12px',
+            borderRadius: '999px',
+            background: activeHash === href ? T.primarySoft : 'transparent',
+            fontWeight: activeHash === href ? 600 : 500,
+            display: isMobile ? 'block' : 'inline',
+          }}
+        >
+          {label}
+        </a>
+      ))}
+      {providerPage && (
+        <a href="#top" style={{ textDecoration: 'none' }} onClick={() => setMenuOpen(false)}>
+          <Button size="sm" variant="secondary">Back to landing</Button>
+        </a>
+      )}
+      <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)}>
+        <Button size="sm" variant="secondary">Storybook</Button>
+      </a>
+      <a href="https://github.com/tropicgirlie/trauma-informed-ui" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)}>
+        <Button size="sm" variant="ghost">GitHub</Button>
+      </a>
+    </>
+  )
+
   return (
-    <nav style={{
-      position: 'sticky', top: 0, zIndex: 100,
-      background: 'rgba(246,244,240,0.92)', backdropFilter: 'blur(10px)',
-      borderBottom: `1px solid ${T.border}`,
-      padding: `0 ${S.gutter}`, display: 'flex', alignItems: 'center',
-      justifyContent: 'space-between', minHeight: '72px', gap: '24px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{
-          width: '34px', height: '34px', borderRadius: '12px',
-          background: T.primarySoft, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', color: T.primary,
-        }}><ShieldCheck size={18} strokeWidth={2} /></div>
-        <span style={{ fontWeight: 600, fontSize: '15px', color: T.text, letterSpacing: '-0.01em' }}>
-          trauma-informed-ui
-        </span>
-        <Badge variant="primary">v0.1</Badge>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-        {NAV_LINKS.map(({ href, label }) => (
-          <a
-            key={href}
-            href={href}
-            aria-current={activeHash === href ? 'page' : undefined}
+    <>
+      <nav aria-label="Site navigation" style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        background: 'rgba(246,244,240,0.92)', backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${T.border}`,
+        padding: `0 ${S.gutter}`, display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', minHeight: '72px', gap: '16px',
+      }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          <div style={{
+            width: '34px', height: '34px', borderRadius: '12px',
+            background: T.primarySoft, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: T.primary, flexShrink: 0,
+          }}><ShieldCheck size={18} strokeWidth={2} /></div>
+          {!isMobile && (
+            <>
+              <span style={{ fontWeight: 600, fontSize: '15px', color: T.text, letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
+                trauma-informed-ui
+              </span>
+              <Badge variant="primary">v0.1</Badge>
+            </>
+          )}
+        </div>
+
+        {/* Desktop nav */}
+        {!isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {allLinks}
+          </div>
+        )}
+
+        {/* Mobile hamburger */}
+        {isMobile && (
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
             style={{
-              fontSize: '13px',
-              color: activeHash === href ? T.primary : T.textMuted,
-              textDecoration: 'none',
-              padding: '7px 12px',
-              borderRadius: '999px',
-              background: activeHash === href ? T.primarySoft : 'transparent',
-              fontWeight: activeHash === href ? 600 : 500,
+              width: '40px', height: '40px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: '10px', border: `1px solid ${T.border}`,
+              background: menuOpen ? T.surface : 'transparent',
+              cursor: 'pointer', color: T.text, flexShrink: 0,
             }}
           >
-            {label}
-          </a>
-        ))}
-        {providerPage && (
-          <a href="#top" style={{ textDecoration: 'none' }}>
-            <Button size="sm" variant="secondary">Back to landing</Button>
-          </a>
+            {menuOpen ? <X size={18} strokeWidth={2} /> : <Menu size={18} strokeWidth={2} />}
+          </button>
         )}
-        <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" target="_blank" rel="noreferrer">
-          <Button size="sm" variant="secondary">Storybook</Button>
-        </a>
-        <a href="https://github.com/tropicgirlie/trauma-informed-ui" target="_blank" rel="noreferrer">
-          <Button size="sm" variant="ghost">GitHub</Button>
-        </a>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Mobile dropdown */}
+      {isMobile && menuOpen && (
+        <div style={{
+          position: 'fixed',
+          top: '72px', left: 0, right: 0,
+          background: 'rgba(246,244,240,0.98)',
+          borderBottom: `1px solid ${T.border}`,
+          padding: '16px 24px 24px',
+          zIndex: 99,
+          display: 'flex', flexDirection: 'column', gap: '6px',
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
+        }}>
+          {allLinks}
+        </div>
+      )}
+    </>
   )
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero({ onNavigate }: { onNavigate?: (view: View, componentId?: string) => void }) {
+  const isMobile = useIsMobile()
   return (
     <section id="top" style={{
-      maxWidth: S.container, margin: '0 auto', padding: `104px ${S.gutter} ${S.sectionY}`,
+      maxWidth: S.container, margin: '0 auto', padding: isMobile ? `64px ${S.gutter} ${S.sectionY}` : `104px ${S.gutter} ${S.sectionY}`,
       textAlign: 'center',
     }}>
+      {/* Eyebrow badge */}
       <div style={{
         display: 'inline-flex', alignItems: 'center', gap: '8px',
         background: T.primarySoft, color: T.primary, borderRadius: '24px',
         padding: '5px 14px', fontSize: '12px', fontWeight: 500,
         letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '28px',
       }}>
-        <Sparkles size={14} strokeWidth={2} /> React · MIT · Trauma-informed by design
+        Open source · React · SAMHSA-aligned
       </div>
+
+      {/* Headline */}
       <h1 style={{
         fontSize: 'clamp(36px, 6vw, 62px)', fontWeight: 700, color: T.text,
         lineHeight: 1.04, letterSpacing: '-0.04em', margin: '0 0 12px',
       }}>
-        Trauma Informed design.
+        Trauma-informed design.
       </h1>
+
+      {/* Positioning line */}
       <p style={{
         fontSize: 'clamp(22px, 3vw, 30px)',
         color: T.primary,
         fontWeight: 600,
         lineHeight: 1.3,
-        margin: '0 0 18px',
+        margin: '0 0 20px',
       }}>
         From aspirational to functional.
       </p>
+
+      {/* Value proposition */}
       <p style={{
-        fontSize: 'clamp(16px, 2.5vw, 20px)', color: T.textMuted,
-        lineHeight: 1.7, maxWidth: '640px', margin: '0 auto 40px',
+        fontSize: 'clamp(16px, 2vw, 18px)', color: T.textMuted,
+        lineHeight: 1.8, maxWidth: '580px', margin: '0 auto 44px',
       }}>
-        First open-source React library for building care-conscious, safety-critical interfaces. Built to translate SAMHSA, trauma-informed practice, and care-worker reality into patterns teams can actually ship.
+        React components built on SAMHSA principles, nervous system science, and care-sector practice — so product teams can ship trauma-informed interfaces without building the framework from scratch.
       </p>
+
+      {/* Primary actions — one destination, one secondary escape */}
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        {onNavigate ? (
+          <Button variant="primary" size="lg" iconAfter={<ArrowRight size={16} />} onClick={() => onNavigate('gallery')}>
+            Explore the design kit
+          </Button>
+        ) : (
+          <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" target="_blank" rel="noreferrer">
+            <Button variant="primary" size="lg">Explore the design kit</Button>
+          </a>
+        )}
         <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" target="_blank" rel="noreferrer">
-          <Button variant="primary" size="lg">View Storybook</Button>
-        </a>
-        <a href="#install">
-          <Button variant="secondary" size="lg">Install the library</Button>
-        </a>
-        <a href="#provider-focus">
-          <Button variant="secondary" size="lg">Provider focus</Button>
+          <Button variant="ghost" size="lg" iconAfter={<ArrowUpRight size={15} />}>Storybook</Button>
         </a>
       </div>
-      
-      {/* Design Kit Navigation */}
-      {onNavigate && (
-        <div style={{ 
-          marginTop: '32px', 
-          padding: '24px', 
-          background: T.surface, 
-          borderRadius: S.radius,
-          border: `1px solid ${T.border}`,
-          maxWidth: '600px',
-          margin: '32px auto 0',
-        }}>
-          <p style={{ fontSize: '14px', color: T.textMuted, margin: '0 0 16px', fontWeight: 500 }}>
-            New: Trauma-Informed Design Kit
-          </p>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Button variant="primary" size="md" onClick={() => onNavigate('tokens')}>
-              Design Tokens
-            </Button>
-            <Button variant="secondary" size="md" onClick={() => onNavigate('gallery')}>
-              Component Gallery
-            </Button>
-          </div>
-        </div>
-      )}
 
-      <a href="#principles" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '28px', color: T.textMuted, textDecoration: 'none', fontSize: '13px', fontWeight: 500 }}>
+      {/* Scroll cue */}
+      <a href="#principles" style={{
+        display: 'inline-flex', flexDirection: 'column', alignItems: 'center',
+        gap: '6px', marginTop: '48px', color: T.textSubtle,
+        textDecoration: 'none', fontSize: '12px', fontWeight: 500, letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+      }}>
         <span>Scroll to explore</span>
-        <span aria-hidden="true" style={{ fontSize: '20px', color: T.primary }}>↓</span>
+        <span aria-hidden="true" style={{ fontSize: '18px', color: T.primary }}>↓</span>
       </a>
+
+      {/* Credibility strip */}
       <div style={{
-        marginTop: '64px', display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px',
+        marginTop: '56px', display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1px',
         background: T.border, borderRadius: '16px', overflow: 'hidden',
       }}>
         {[
-          { n: '6', label: 'SAMHSA principles mapped to UI' },
-          { n: '4', label: 'Flagship library patterns' },
-          { n: '2', label: 'Public-sector frameworks aligned' },
+          { n: '24', label: 'trauma-informed components' },
+          { n: 'AA', label: 'WCAG 2.2 accessibility standard' },
+          { n: '6', label: 'SAMHSA principles, mapped to code' },
         ].map(({ n, label }) => (
           <div key={label} style={{ background: T.white, padding: '28px 24px', textAlign: 'center' }}>
             <div style={{ fontSize: '28px', fontWeight: 700, color: T.primary, letterSpacing: '-0.02em' }}>{n}</div>
@@ -767,6 +1257,7 @@ function Hero({ onNavigate }: { onNavigate?: (view: View, componentId?: string) 
 
 // ─── Principles ───────────────────────────────────────────────────────────────
 function Principles() {
+  const isMobile = useIsMobile()
   return (
     <section id="principles" style={{ background: T.surface, padding: `${S.sectionY} ${S.gutter}` }}>
       <div style={{ maxWidth: S.container, margin: '0 auto' }}>
@@ -788,12 +1279,12 @@ function Principles() {
                 padding: '28px',
                 border: `1px solid ${T.border}`,
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 220px) minmax(0, 1fr) minmax(0, 260px)',
-                gap: '22px',
+                gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 220px) minmax(0, 1fr) minmax(0, 260px)',
+                gap: isMobile ? '16px' : '22px',
                 alignItems: 'start',
               }}
             >
-              <div style={{ paddingRight: '14px', borderRight: `1px solid ${T.border}` }}>
+              <div style={{ paddingRight: isMobile ? '0' : '14px', borderRight: isMobile ? 'none' : `1px solid ${T.border}`, paddingBottom: isMobile ? '16px' : '0', borderBottom: isMobile ? `1px solid ${T.border}` : 'none' }}>
                 <IconWrap><Compass size={18} strokeWidth={2} /></IconWrap>
                 <div style={SECTION_LABEL_STYLE}>
                   SAMHSA principle
@@ -803,7 +1294,7 @@ function Principles() {
                 </div>
                 <h3 style={{ fontSize: '18px', fontWeight: 600, color: T.text, margin: 0 }}>{principle}</h3>
               </div>
-              <div style={{ paddingRight: '14px', borderRight: `1px solid ${T.border}` }}>
+              <div style={{ paddingRight: isMobile ? '0' : '14px', borderRight: isMobile ? 'none' : `1px solid ${T.border}` }}>
                 <div style={SECTION_LABEL_STYLE}>
                   UI pattern
                 </div>
@@ -894,7 +1385,7 @@ function LibraryRoadmap() {
   )
 }
 
-function LiveComponentsPreview() {
+function LiveComponentsPreview({ onNavigate }: { onNavigate: (view: View, componentId?: string) => void }) {
   const { toast } = useToast()
   const [consentChecked, setConsentChecked] = useState(false)
   const [followUp, setFollowUp] = useState(true)
@@ -914,11 +1405,9 @@ function LiveComponentsPreview() {
             These previews use the actual component library, not static marketing mockups. The interaction patterns are tuned for healthcare, support work, and other safety-critical contexts where pacing, clarity, and repair matter.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <Button variant="primary" iconAfter={<ArrowRight size={16} />} onClick={() => onNavigate('gallery')}>Component gallery</Button>
             <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" target="_blank" rel="noreferrer">
-              <Button variant="primary">Open Storybook</Button>
-            </a>
-            <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/?path=/story/alert--default" target="_blank" rel="noreferrer">
-              <Button variant="secondary">Review component docs</Button>
+              <Button variant="ghost" iconAfter={<ArrowUpRight size={15} />}>Storybook</Button>
             </a>
           </div>
         </div>
@@ -966,9 +1455,9 @@ function LiveComponentsPreview() {
                 <div>
                   <div style={SECTION_LABEL_STYLE}>Toast notifications</div>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <Button size="sm" variant="secondary" onClick={() => toast({ variant: 'info', message: 'Your progress has been saved.' })}>Info</Button>
-                    <Button size="sm" variant="secondary" onClick={() => toast({ variant: 'success', title: 'Saved', message: 'Recorded securely.' })}>Success</Button>
-                    <Button size="sm" variant="secondary" onClick={() => toast({ variant: 'danger', title: 'Error', message: 'Nothing was lost. You can retry when ready.' })}>Danger</Button>
+                    <Button size="sm" variant="secondary" onClick={() => toast({ variant: 'info', message: 'Your progress has been saved. You can return at any time.' })}>Save note</Button>
+                    <Button size="sm" variant="secondary" onClick={() => toast({ variant: 'success', title: 'Marked complete', message: 'Recorded securely. You can undo this in settings.' })}>Mark complete</Button>
+                    <Button size="sm" variant="secondary" onClick={() => toast({ variant: 'danger', title: 'Could not save', message: 'Nothing was lost. You can try again when ready.' })}>Retry failed save</Button>
                   </div>
                 </div>
               </div>
@@ -1030,18 +1519,18 @@ function LiveComponentsPreview() {
                     )}
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       <RegretButton label="Submit response" onAction={() => setLastAction('Response submitted')} onUndo={() => setLastAction(null)} toastMessage="Response queued" />
-                      <Button variant="secondary" onClick={() => setModalOpen(true)}>Open supportive modal</Button>
+                      <Button variant="secondary" onClick={() => setModalOpen(true)}>Pause and review options</Button>
                     </div>
                   </div>
                 </Card>
 
-                <Card header="Storybook sync">
-                  <p style={{ margin: '0 0 12px', color: T.textMuted, lineHeight: 1.75, fontSize: '14px' }}>
-                    This section exists to mirror actual Storybook behaviour and give a product team a quick, realistic view of how the patterns feel in context.
+                <Card header="Why repair matters">
+                  <p style={{ margin: '0 0 14px', color: T.textMuted, lineHeight: 1.75, fontSize: '14px' }}>
+                    Irreversible actions trigger shame and freeze. An undo window lets the nervous system settle — the user knows a mistake can be corrected before it becomes permanent.
                   </p>
-                  <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-                    <Button variant="ghost">Open full component library</Button>
-                  </a>
+                  <p style={{ margin: 0, color: T.textMuted, lineHeight: 1.75, fontSize: '14px' }}>
+                    SAMHSA principle: <strong style={{ color: T.text, fontWeight: 600 }}>Empowerment, voice & choice.</strong>
+                  </p>
                 </Card>
               </div>
 
@@ -1076,10 +1565,10 @@ function GlobalAlignment() {
       <div style={{ maxWidth: S.container, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <h2 style={{ fontSize: '32px', fontWeight: 700, color: T.text, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
-            Global alignment
+            Built for the direction policy is already heading.
           </h2>
           <p style={{ fontSize: '16px', color: T.textMuted, maxWidth: '760px', margin: '0 auto', lineHeight: 1.7 }}>
-            Trauma-informed interaction design is not a niche preference. Canada and Ireland are both moving toward trauma-informed service standards. This library positions UI work inside that shared direction of travel.
+            Trauma-informed interaction design is not a niche preference — it is where service delivery is going. Canada and Ireland are both formalising trauma-informed standards. This library translates that policy direction into interface infrastructure.
           </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
@@ -1102,10 +1591,11 @@ function GlobalAlignment() {
 }
 
 function ProviderFocusPreview() {
+  const isMobile = useIsMobile()
   return (
     <section id="provider-focus" style={{ background: T.surfaceDeep, padding: `${S.sectionY} ${S.gutter}` }}>
       <div style={{ maxWidth: S.container, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(280px, 0.8fr)', gap: '24px', alignItems: 'stretch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.2fr) minmax(280px, 0.8fr)', gap: '24px', alignItems: 'stretch' }}>
           <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: S.radius, padding: '32px' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '999px', background: T.primarySoft, color: T.primary, fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '18px' }}>
               <HeartHandshake size={14} strokeWidth={2} /> Provider lens
@@ -1118,10 +1608,7 @@ function ProviderFocusPreview() {
             </p>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <a href="#provider-focus-page">
-                <Button variant="primary">Read the provider page →</Button>
-              </a>
-              <a href="#global-alignment">
-                <Button variant="secondary">See policy alignment</Button>
+                <Button variant="primary" iconAfter={<ArrowRight size={16} />}>Read the provider page</Button>
               </a>
             </div>
           </div>
@@ -1153,6 +1640,7 @@ interface TokensPageProps {
 
 function TokensPage({ theme, onToggleTheme, onNavigate }: TokensPageProps) {
   const t = useTokens(theme)
+  const isMobile = useIsMobile()
   const [copied, setCopied] = useState<string | null>(null)
   
   const copy = (val: string) => {
@@ -1181,63 +1669,25 @@ function TokensPage({ theme, onToggleTheme, onNavigate }: TokensPageProps) {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: t.bg, fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: t.text }}>
-      {/* Header */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: theme === 'dark' ? 'rgba(21,25,28,0.92)' : 'rgba(246,244,240,0.92)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: `1px solid ${t.border}`,
-        padding: `0 ${S.gutter}`, display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', minHeight: '72px', gap: '24px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => onNavigate('landing')}>
-          <div style={{
-            width: '34px', height: '34px', borderRadius: '12px',
-            background: t.primarySoft, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', color: t.primary,
-          }}><ShieldCheck size={18} strokeWidth={2} /></div>
-          <span style={{ fontWeight: 600, fontSize: '15px', color: t.text, letterSpacing: '-0.01em' }}>
-            trauma-informed-ui
-          </span>
-          <Badge variant="primary">Design Kit</Badge>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button
-            onClick={onToggleTheme}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '8px 14px', borderRadius: '999px',
-              border: `1px solid ${t.border}`, background: t.surface,
-              color: t.text, cursor: 'pointer', fontSize: '13px',
-            }}
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <MoonStar size={16} />}
-            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          </button>
-          <button
-            onClick={() => onNavigate('gallery')}
-            style={{
-              padding: '8px 16px', borderRadius: '999px',
-              border: 'none', background: t.primary,
-              color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 500,
-            }}
-          >
-            Component Gallery
-          </button>
-        </div>
-      </nav>
+    <div style={{ minHeight: '100vh', background: t.white, fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: t.text }}>
+      <DocNav activeView="tokens" theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
 
       {/* Content */}
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: `${S.sectionY} ${S.gutter}` }}>
+      <main id="main-content" style={{ maxWidth: '1312px', margin: '0 auto', padding: isMobile ? '28px 20px 64px' : 'clamp(48px,6vw,80px) clamp(24px,8vw,128px) 88px' }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-          <h1 style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 700, color: t.text, margin: '0 0 16px', letterSpacing: '-0.03em' }}>
+        <div style={{ marginBottom: '56px' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            padding: '5px 12px', borderRadius: '12px', marginBottom: '20px',
+            background: t.surface, border: `1px solid ${t.border}`,
+          }}>
+            <span style={{ fontSize: '11px', fontWeight: 500, color: t.textMuted }}>Foundation Reference</span>
+          </div>
+          <h1 style={{ fontSize: 'clamp(36px, 5vw, 48px)', fontWeight: 700, color: t.text, margin: '0 0 16px', letterSpacing: '-0.025em' }}>
             Design Tokens
           </h1>
-          <p style={{ fontSize: '18px', color: t.textMuted, maxWidth: '680px', margin: '0 auto', lineHeight: 1.7 }}>
-            Muted, desaturated palettes to reduce physiological arousal. No pure black. No warm warning colors.
-            Each token includes usage notes, text treatment guidance, and contrast checks.
+          <p style={{ fontSize: '17px', color: t.textMuted, maxWidth: '680px', lineHeight: 1.7, margin: 0 }}>
+            A comprehensive reference for our trauma-informed color palette. These tokens are calibrated for softness, predictability, and psychological safety, avoiding harsh contrasts while maintaining strict accessibility standards.
           </p>
         </div>
 
@@ -1341,18 +1791,21 @@ interface GalleryPageProps {
 
 function GalleryPage({ theme, onToggleTheme, onNavigate }: GalleryPageProps) {
   const t = useTokens(theme)
+  const isMobile = useIsMobile()
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<ComponentCategory | 'all'>('all')
 
   const categories: { id: ComponentCategory | 'all'; label: string }[] = [
-    { id: 'all', label: 'All Components' },
+    { id: 'all', label: 'All' },
     { id: 'feedback', label: 'Feedback' },
-    { id: 'form', label: 'Form Controls' },
+    { id: 'form', label: 'Form controls' },
     { id: 'layout', label: 'Layout' },
     { id: 'overlay', label: 'Overlays' },
     { id: 'navigation', label: 'Navigation' },
     { id: 'foundation', label: 'Foundation' },
   ]
+
+  const COMING_SOON = ['layout-grid', 'subtle-toast']
 
   const filteredComponents = COMPONENT_SPECS.filter((component) => {
     const matchesSearch = component.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -1362,210 +1815,199 @@ function GalleryPage({ theme, onToggleTheme, onNavigate }: GalleryPageProps) {
   })
 
   return (
-    <div style={{ minHeight: '100vh', background: t.bg, fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: t.text }}>
-      {/* Header */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: theme === 'dark' ? 'rgba(21,25,28,0.92)' : 'rgba(246,244,240,0.92)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: `1px solid ${t.border}`,
-        padding: `0 ${S.gutter}`, display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', minHeight: '72px', gap: '24px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => onNavigate('landing')}>
-          <div style={{
-            width: '34px', height: '34px', borderRadius: '12px',
-            background: t.primarySoft, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', color: t.primary,
-          }}><ShieldCheck size={18} strokeWidth={2} /></div>
-          <span style={{ fontWeight: 600, fontSize: '15px', color: t.text, letterSpacing: '-0.01em' }}>
-            trauma-informed-ui
-          </span>
-          <Badge variant="primary">Design Kit</Badge>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button
-            onClick={onToggleTheme}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '8px 14px', borderRadius: '999px',
-              border: `1px solid ${t.border}`, background: t.surface,
-              color: t.text, cursor: 'pointer', fontSize: '13px',
-            }}
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <MoonStar size={16} />}
-            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          </button>
-          <button
-            onClick={() => onNavigate('tokens')}
-            style={{
-              padding: '8px 16px', borderRadius: '999px',
-              border: `1px solid ${t.border}`, background: 'transparent',
-              color: t.text, cursor: 'pointer', fontSize: '13px',
-            }}
-          >
-            Tokens
-          </button>
-          <button
-            onClick={() => onNavigate('gallery')}
-            style={{
-              padding: '8px 16px', borderRadius: '999px',
-              border: 'none', background: t.primary,
-              color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 500,
-            }}
-          >
-            Component Gallery
-          </button>
-        </div>
-      </nav>
+    <div style={{ minHeight: '100vh', background: t.surface, fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: t.text }}>
+      <DocNav activeView="gallery" theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
 
       {/* Content */}
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: `${S.sectionY} ${S.gutter}` }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <h1 style={{ fontSize: 'clamp(36px, 5vw, 48px)', fontWeight: 700, color: t.text, margin: '0 0 16px', letterSpacing: '-0.03em' }}>
-            Component Gallery
+      <main id="main-content" style={{ maxWidth: '1312px', margin: '0 auto', padding: isMobile ? '28px 20px 64px' : 'clamp(48px,6vw,80px) clamp(24px,8vw,128px) 88px' }}>
+        {/* Page Header */}
+        <div style={{ marginBottom: '48px' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            padding: '6px 14px', borderRadius: '15px', marginBottom: '20px',
+            background: t.primarySoft, border: `1px solid ${t.border}`,
+          }}>
+            <ShieldAlert size={14} color={t.primary} strokeWidth={2} />
+            <span style={{ fontSize: '13px', fontWeight: 500, color: t.primary }}>Component Gallery</span>
+          </div>
+          <h1 style={{ fontSize: '48px', fontWeight: 700, color: t.text, margin: '0 0 16px', letterSpacing: '-0.025em', lineHeight: 1.1 }}>
+            Building Blocks of Safety
           </h1>
-          <p style={{ fontSize: '18px', color: t.textMuted, maxWidth: '680px', margin: '0 auto', lineHeight: 1.7 }}>
-            Trauma-informed UI primitives with nervous-system-informed usage notes.
-            Each component includes anatomy, states, token mapping, and accessibility guidance.
+          <p style={{ fontSize: '17px', color: t.textMuted, maxWidth: '640px', lineHeight: 1.7, margin: 0 }}>
+            Browse our collection of trauma-informed UI components. Each element is designed with
+            predictable behaviors, generous spacing, and clear exits to foster a calming,
+            psychologically safe user experience.
           </p>
         </div>
 
-        {/* Search and Filter */}
-        <div style={{ marginBottom: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Search */}
-          <div style={{ position: 'relative', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-            <Search size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: t.textMuted }} />
-            <input
-              type="text"
-              placeholder="Search components..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{
-                width: '100%', padding: '14px 16px 14px 48px',
-                borderRadius: '12px', border: `1px solid ${t.border}`,
-                background: t.surface, color: t.text,
-                fontSize: '16px', outline: 'none',
-              }}
-            />
-          </div>
-
-          {/* Category Filters */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        {/* Filter + Search bar */}
+        <div style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'center',
+          justifyContent: 'space-between',
+          gap: isMobile ? '12px' : '16px',
+          marginBottom: '40px',
+          backdropFilter: 'blur(4px)',
+          background: theme === 'dark' ? 'rgba(21,25,28,0.6)' : 'rgba(255,255,255,0.6)',
+          borderBottom: `1px solid ${t.border}`,
+          padding: '18px 0',
+        }}>
+          {/* Filter buttons */}
+          <div
+            role="radiogroup"
+            aria-label="Filter by category"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch' as CSSProperties['WebkitOverflowScrolling'],
+              paddingBottom: isMobile ? '4px' : '0',
+              flexShrink: 0,
+            }}
+          >
+            <SlidersHorizontal size={15} color={t.textMuted} strokeWidth={2} style={{ marginRight: '6px', flexShrink: 0 }} aria-hidden="true" />
             {categories.map(({ id, label }) => (
               <button
                 key={id}
+                role="radio"
+                aria-checked={selectedCategory === id}
                 onClick={() => setSelectedCategory(id)}
                 style={{
-                  padding: '8px 16px', borderRadius: '999px',
-                  border: `1px solid ${selectedCategory === id ? t.primary : t.border}`,
-                  background: selectedCategory === id ? t.primary : t.surface,
-                  color: selectedCategory === id ? '#fff' : t.text,
+                  padding: '7px 14px', borderRadius: '18px',
+                  border: 'none', flexShrink: 0,
+                  background: selectedCategory === id ? t.surface : 'transparent',
+                  color: selectedCategory === id ? t.text : t.textMuted,
                   cursor: 'pointer', fontSize: '13px', fontWeight: 500,
+                  boxShadow: selectedCategory === id ? `0 0 1px rgba(23,26,31,0.05), 0 0 2px rgba(23,26,31,0.08)` : 'none',
+                  transition: 'all 0.15s',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {label}
               </button>
             ))}
           </div>
+          {/* Search */}
+          <div style={{ position: 'relative', width: isMobile ? '100%' : '240px', flexShrink: isMobile ? 0 : 0 }}>
+            <Search size={14} style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: t.textMuted }} />
+            <input
+              type="text"
+              placeholder="Search components..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: '100%', padding: '8px 12px 8px 32px',
+                borderRadius: '20px', border: `1px solid ${t.border}`,
+                background: t.bg, color: t.text,
+                fontSize: '13px', outline: 'none',
+                boxShadow: `0 1px 2.5px rgba(23,26,31,0.07), 0 0 2px rgba(23,26,31,0.08)`,
+              }}
+            />
+          </div>
         </div>
 
         {/* Component Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-          {filteredComponents.map((component) => (
-            <div
-              key={component.id}
-              onClick={() => onNavigate('component', component.id)}
-              style={{
-                background: t.surface,
-                borderRadius: '16px',
-                padding: '24px',
-                border: `1px solid ${t.border}`,
-                cursor: 'pointer',
-                transition: 'transform 0.15s, box-shadow 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)'
-                e.currentTarget.style.boxShadow = `0 8px 24px ${theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(60,127,140,0.12)'}`
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = 'none'
-              }}
-            >
-              {/* Card Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{
-                  fontSize: '12px', fontWeight: 600, textTransform: 'uppercase',
-                  letterSpacing: '0.06em', color: t.primary,
-                  padding: '4px 10px', borderRadius: '999px', background: t.primarySoft,
-                }}>
-                  {CATEGORY_LABELS[component.category]}
-                </span>
-                <span style={{ fontSize: '12px', color: t.textMuted }}>
-                  {Object.keys(component.tokenMapping).length} tokens
-                </span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(278px, 1fr))', gap: '24px' }}>
+          {filteredComponents.map((component) => {
+            const isComingSoon = COMING_SOON.includes(component.id)
+            return (
+              <div
+                key={component.id}
+                onClick={() => !isComingSoon && onNavigate('component', component.id)}
+                style={{
+                  background: theme === 'dark' ? t.surface : '#fff',
+                  borderRadius: '10px',
+                  border: 'none',
+                  cursor: isComingSoon ? 'default' : 'pointer',
+                  transition: 'transform 0.15s, box-shadow 0.15s',
+                  boxShadow: '0 1px 2.5px rgba(23,26,31,0.07), 0 0 2px rgba(23,26,31,0.08)',
+                  overflow: 'hidden',
+                  opacity: isComingSoon ? 0.8 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isComingSoon) {
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(23,26,31,0.12), 0 0 2px rgba(23,26,31,0.08)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 1px 2.5px rgba(23,26,31,0.07), 0 0 2px rgba(23,26,31,0.08)'
+                }}
+              >
+                {/* Thumbnail */}
+                <div style={{ position: 'relative' }}>
+                  <ComponentThumbnail id={component.id} t={t} theme={theme} />
+                  {/* Category badge (top-right overlay) */}
+                  <div style={{
+                    position: 'absolute', top: '12px', right: '12px',
+                    backdropFilter: 'blur(2px)',
+                    background: 'rgba(255,255,255,0.8)',
+                    border: '1px solid rgba(222,225,230,0.5)',
+                    borderRadius: '11px',
+                    padding: '3px 10px',
+                    fontSize: '10px', fontWeight: 500, color: t.textMuted,
+                  }}>
+                    {CATEGORY_LABELS[component.category]}
+                  </div>
+                </div>
+
+                {/* Card body */}
+                <div style={{ padding: '20px 20px 16px' }}>
+                  {/* Icon + Name */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>
+                      {component.id === 'regret-button' ? '↩' :
+                       component.id === 'consent-stepper' ? '☑' :
+                       component.id === 'disclosure-card' ? '👁' :
+                       component.id === 'safe-exit' ? '🚪' :
+                       component.id === 'breathing-guide' ? '🌬' :
+                       component.id === 'calming-message' ? '♡' :
+                       component.id === 'safe-input' ? 'T' :
+                       component.id === 'layout-grid' ? '⊞' : '□'}
+                    </span>
+                    <h3 style={{ fontSize: '15px', fontWeight: 600, color: t.text, margin: 0, letterSpacing: '-0.025em' }}>
+                      {component.name}
+                    </h3>
+                  </div>
+
+                  {/* Purpose */}
+                  <p style={{ fontSize: '13px', color: t.textMuted, margin: '0 0 16px', lineHeight: 1.55, minHeight: '42px' }}>
+                    {component.purpose}
+                  </p>
+
+                  {/* Token tags */}
+                  <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: '14px' }}>
+                    <div style={{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: t.textMuted, marginBottom: '10px' }}>
+                      Tokens
+                    </div>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                      {Object.values(component.tokenMapping).slice(0, 3).map((token) => (
+                        <span key={token} style={{
+                          fontSize: '10px', padding: '3px 7px',
+                          borderRadius: '4px',
+                          background: 'rgba(243,244,246,0.5)',
+                          color: t.text,
+                        }}>
+                          {token.startsWith('var(') ? token : `var(--${token.toLowerCase().replace(/\s/g, '-')})`}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              {/* Component Name */}
-              <h3 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 8px' }}>
-                {component.name}
-              </h3>
-
-              {/* Tagline */}
-              <p style={{ fontSize: '14px', color: t.textMuted, margin: '0 0 16px', lineHeight: 1.6 }}>
-                {component.tagline}
-              </p>
-
-              {/* SAMHSA Principle */}
-              <div style={{ fontSize: '13px', color: t.textSubtle, marginBottom: '16px' }}>
-                <strong style={{ color: t.text }}>SAMHSA:</strong> {component.samhsaPrinciple}
-              </div>
-
-              {/* Purpose Preview */}
-              <p style={{ fontSize: '13px', color: t.textMuted, margin: '0 0 20px', lineHeight: 1.7 }}>
-                {component.purpose}
-              </p>
-
-              {/* Token Preview */}
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                {Object.entries(component.tokenMapping).slice(0, 3).map(([key, token]) => (
-                  <span
-                    key={key}
-                    style={{
-                      fontSize: '11px', padding: '4px 8px',
-                      borderRadius: '6px', background: t.bg,
-                      color: t.textMuted, border: `1px solid ${t.border}`,
-                    }}
-                  >
-                    {token}
-                  </span>
-                ))}
-                {Object.keys(component.tokenMapping).length > 3 && (
-                  <span style={{ fontSize: '11px', color: t.textSubtle, padding: '4px 8px' }}>
-                    +{Object.keys(component.tokenMapping).length - 3} more
-                  </span>
-                )}
-              </div>
-
-              {/* View Details Button */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: t.primary, fontSize: '14px', fontWeight: 500 }}>
-                <span>View full spec</span>
-                <ArrowRight size={16} />
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Empty State */}
         {filteredComponents.length === 0 && (
           <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-            <h3 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 8px' }}>
+            <Search size={32} color={t.textMuted} style={{ margin: '0 auto 16px', display: 'block' }} />
+            <h3 style={{ fontSize: '18px', fontWeight: 600, color: t.text, margin: '0 0 8px' }}>
               No components found
             </h3>
-            <p style={{ fontSize: '15px', color: t.textMuted, margin: 0 }}>
+            <p style={{ fontSize: '14px', color: t.textMuted, margin: 0 }}>
               Try adjusting your search or filter criteria
             </p>
           </div>
@@ -1587,7 +2029,18 @@ interface ComponentDetailProps {
 
 function ComponentDetail({ componentId, theme, onToggleTheme, onNavigate }: ComponentDetailProps) {
   const t = useTokens(theme)
+  const isMobile = useIsMobile()
   const component = COMPONENT_SPECS.find(c => c.id === componentId)
+  const SIDEBAR_COMPONENTS = COMPONENT_SPECS.filter(c => !['layout-grid', 'subtle-toast'].includes(c.id))
+
+  const sidebarLinkStyle = (isActive: boolean): CSSProperties => ({
+    display: 'block', padding: '7px 12px', borderRadius: '8px',
+    fontSize: '13px', fontWeight: isActive ? 500 : 400,
+    color: t.text,
+    background: isActive ? t.primarySoft : 'transparent',
+    cursor: 'pointer', border: 'none', textAlign: 'left', width: '100%',
+    transition: 'background 0.12s, color 0.12s',
+  })
 
   if (!component) {
     return (
@@ -1604,236 +2057,275 @@ function ComponentDetail({ componentId, theme, onToggleTheme, onNavigate }: Comp
 
   return (
     <div style={{ minHeight: '100vh', background: t.bg, fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif", color: t.text }}>
-      {/* Header */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: theme === 'dark' ? 'rgba(21,25,28,0.92)' : 'rgba(246,244,240,0.92)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: `1px solid ${t.border}`,
-        padding: `0 ${S.gutter}`, display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', minHeight: '72px', gap: '24px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => onNavigate('landing')}>
-          <div style={{
-            width: '34px', height: '34px', borderRadius: '12px',
-            background: t.primarySoft, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', color: t.primary,
-          }}><ShieldCheck size={18} strokeWidth={2} /></div>
-          <span style={{ fontWeight: 600, fontSize: '15px', color: t.text, letterSpacing: '-0.01em' }}>
-            trauma-informed-ui
-          </span>
-          <Badge variant="primary">Design Kit</Badge>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => onNavigate('gallery')} style={{ padding: '8px 16px', borderRadius: '999px', border: `1px solid ${t.border}`, background: 'transparent', color: t.text, cursor: 'pointer', fontSize: '13px' }}>
-            <ChevronLeft size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
-            Back to Gallery
-          </button>
-          <button onClick={onToggleTheme} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '999px', border: `1px solid ${t.border}`, background: t.surface, color: t.text, cursor: 'pointer', fontSize: '13px' }}>
-            {theme === 'dark' ? <Sun size={16} /> : <MoonStar size={16} />}
-          </button>
-        </div>
-      </nav>
+      <DocNav activeView="component" theme={theme} onToggleTheme={onToggleTheme} onNavigate={onNavigate} />
 
-      {/* Content */}
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: `${S.sectionY} ${S.gutter}` }}>
-        {/* Breadcrumb */}
-        <div style={{ marginBottom: '32px', fontSize: '14px', color: t.textMuted }}>
-          <span style={{ cursor: 'pointer' }} onClick={() => onNavigate('gallery')}>Components</span>
-          <span style={{ margin: '0 8px' }}>/</span>
-          <span style={{ color: t.text }}>{component.name}</span>
-        </div>
+      {/* Body: sidebar + content */}
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', minHeight: 'calc(100vh - 64px)' }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: '48px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <span style={{
-              fontSize: '12px', fontWeight: 600, textTransform: 'uppercase',
-              letterSpacing: '0.06em', color: t.primary,
-              padding: '6px 12px', borderRadius: '999px', background: t.primarySoft,
-            }}>
-              {CATEGORY_LABELS[component.category]}
-            </span>
-            <span style={{ fontSize: '14px', color: t.textMuted }}>
-              SAMHSA: {component.samhsaPrinciple}
-            </span>
+        {/* Left Sidebar (desktop) / Horizontal nav (mobile) */}
+        <aside aria-label="Component list" style={{
+          width: isMobile ? '100%' : '220px',
+          flexShrink: 0,
+          background: t.surfaceDeep,
+          borderRight: isMobile ? 'none' : `1px solid ${t.border}`,
+          borderBottom: isMobile ? `1px solid ${t.border}` : 'none',
+          padding: isMobile ? '16px 20px' : '28px 12px',
+          position: isMobile ? 'relative' : 'sticky',
+          top: isMobile ? 'auto' : '64px',
+          height: isMobile ? 'auto' : 'calc(100vh - 64px)',
+          overflowY: isMobile ? 'visible' : 'auto',
+        }}>
+          {/* Getting Started — hidden on mobile for brevity */}
+          {!isMobile && (
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: t.textMuted, padding: '0 12px', marginBottom: '6px' }}>
+                Getting Started
+              </div>
+              <button style={sidebarLinkStyle(false)} onClick={() => onNavigate('tokens')}>Design Tokens</button>
+              <button style={sidebarLinkStyle(false)} onClick={() => onNavigate('gallery')}>Component Gallery</button>
+              <button style={sidebarLinkStyle(false)} onClick={() => onNavigate('gallery')}>Docs</button>
+            </div>
+          )}
+
+          {/* Components — horizontal scroll on mobile, vertical on desktop */}
+          <div>
+            {!isMobile && (
+              <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: t.textMuted, padding: '0 12px', marginBottom: '6px' }}>
+                Components
+              </div>
+            )}
+            <div style={isMobile ? {
+              display: 'flex', gap: '6px', overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch' as CSSProperties['WebkitOverflowScrolling'],
+              paddingBottom: '4px',
+            } : {}}>
+              {SIDEBAR_COMPONENTS.map((c) => (
+                <button
+                  key={c.id}
+                  style={isMobile ? {
+                    flexShrink: 0,
+                    padding: '6px 12px', borderRadius: '18px',
+                    border: `1px solid ${c.id === componentId ? t.primary : t.border}`,
+                    background: c.id === componentId ? t.primarySoft : 'transparent',
+                    color: c.id === componentId ? t.primary : t.textMuted,
+                    cursor: 'pointer', fontSize: '12px', fontWeight: c.id === componentId ? 600 : 400,
+                    whiteSpace: 'nowrap',
+                  } : sidebarLinkStyle(c.id === componentId)}
+                  onClick={() => onNavigate('component', c.id)}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
           </div>
-          <h1 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 700, color: t.text, margin: '0 0 12px', letterSpacing: '-0.03em' }}>
+        </aside>
+
+        {/* Main content */}
+        <main id="main-content" style={{ flex: 1, minWidth: 0, padding: isMobile ? '24px 20px 64px' : '40px 48px 88px', background: t.white }}>
+          {/* Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '4px 12px', borderRadius: '12px',
+              background: t.primarySoft, border: `1px solid ${t.border}`,
+            }}>
+              <span style={{ fontSize: '11px', fontWeight: 500, color: t.primary }}>
+                {CATEGORY_LABELS[component.category]}
+              </span>
+            </div>
+            <span style={{ fontSize: '12px', color: t.textMuted }}>·</span>
+            <span style={{
+              fontSize: '11px', fontWeight: 500, color: t.textMuted,
+              padding: '4px 12px', borderRadius: '12px',
+              background: t.surface, border: `1px solid ${t.border}`,
+            }}>Trauma-Informed</span>
+          </div>
+
+          {/* Title */}
+          <h1 style={{ fontSize: '36px', fontWeight: 700, color: t.text, margin: '0 0 12px', letterSpacing: '-0.025em' }}>
             {component.name}
           </h1>
-          <p style={{ fontSize: '20px', color: t.primary, fontWeight: 600, margin: '0 0 16px' }}>
-            {component.tagline}
-          </p>
-          <p style={{ fontSize: '16px', color: t.textMuted, maxWidth: '680px', lineHeight: 1.7 }}>
+          <p style={{ fontSize: '16px', color: t.textMuted, maxWidth: '640px', lineHeight: 1.7, margin: '0 0 40px' }}>
             {component.purpose}
           </p>
-        </div>
 
-        {/* Two Column Layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px' }}>
-          {/* Left Column - Visuals */}
-          <div>
-            {/* States */}
-            <section style={{ marginBottom: '48px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>States</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {component.states.map((state, index) => (
-                  <div key={index} style={{
-                    background: t.surface, borderRadius: '12px', padding: '20px',
-                    border: `1px solid ${t.border}`,
-                  }}>
-                    <span style={{
-                      fontSize: '12px', fontWeight: 600, textTransform: 'uppercase',
-                      letterSpacing: '0.06em', color: t.textMuted, marginBottom: '8px', display: 'block',
+          {/* Two-column layout: main (left) + spec panel (right) */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: isMobile ? '28px' : '40px', alignItems: 'start' }}>
+
+            {/* Left: States + Anatomy */}
+            <div>
+              {/* Component States */}
+              <section style={{ marginBottom: '40px' }}>
+                <h2 style={{ fontSize: '17px', fontWeight: 600, color: t.text, margin: '0 0 16px', letterSpacing: '-0.01em' }}>Component States</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {component.states.map((state, index) => (
+                    <div key={index} style={{
+                      background: theme === 'dark' ? t.surface : '#fff',
+                      borderRadius: '10px', padding: '16px 20px',
+                      border: `1px solid ${t.border}`,
+                      boxShadow: '0 1px 2.5px rgba(23,26,31,0.04)',
+                      display: 'flex', alignItems: 'flex-start', gap: '12px',
                     }}>
-                      State {index + 1}
-                    </span>
-                    <span style={{ fontSize: '15px', color: t.text }}>{state}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Anatomy */}
-            <section style={{ marginBottom: '48px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Anatomy</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {component.anatomy.map((part, index) => (
-                  <div key={index} style={{
-                    display: 'flex', alignItems: 'center', gap: '12px',
-                    background: t.surface, borderRadius: '10px', padding: '16px',
-                    border: `1px solid ${t.border}`,
-                  }}>
-                    <span style={{
-                      width: '28px', height: '28px', borderRadius: '50%', background: t.primarySoft,
-                      color: t.primary, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '13px', fontWeight: 600,
-                    }}>{index + 1}</span>
-                    <span style={{ fontSize: '15px', color: t.text }}>{part}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          {/* Right Column - Specs */}
-          <div>
-            {/* Props */}
-            <section style={{ marginBottom: '48px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Props & Content</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {component.props.map((prop) => (
-                  <div key={prop.name} style={{
-                    background: t.surface, borderRadius: '10px', padding: '16px',
-                    border: `1px solid ${t.border}`,
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <code style={{ fontSize: '14px', color: t.primary, fontFamily: 'monospace', fontWeight: 600 }}>
-                        {prop.name}
-                      </code>
                       <span style={{
-                        fontSize: '11px', padding: '2px 8px', borderRadius: '4px',
+                        minWidth: '22px', height: '22px', borderRadius: '11px',
                         background: t.primarySoft, color: t.primary,
-                      }}>{prop.type}</span>
-                      {prop.required && (
-                        <span style={{
-                          fontSize: '11px', padding: '2px 8px', borderRadius: '4px',
-                          background: t.danger + '20', color: t.danger,
-                        }}>required</span>
-                      )}
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '11px', fontWeight: 700, flexShrink: 0, marginTop: '1px',
+                      }}>{index + 1}</span>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: t.text, marginBottom: '2px' }}>
+                          {state.split('(')[0].trim()}
+                        </div>
+                        {state.includes('(') && (
+                          <div style={{ fontSize: '12px', color: t.textMuted }}>
+                            {state.match(/\(([^)]+)\)/)?.[1]}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <p style={{ fontSize: '14px', color: t.textMuted, margin: 0 }}>{prop.description}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
 
-            {/* Token Mapping */}
-            <section style={{ marginBottom: '48px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Token Mapping</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {Object.entries(component.tokenMapping).map(([key, token]) => (
-                  <div key={key} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    background: t.surface, borderRadius: '10px', padding: '14px 16px',
-                    border: `1px solid ${t.border}`,
-                  }}>
-                    <span style={{ fontSize: '14px', color: t.text }}>{key}</span>
-                    <code style={{ fontSize: '13px', color: t.primary, fontFamily: 'monospace', background: t.primarySoft, padding: '4px 8px', borderRadius: '4px' }}>
-                      {token}
+              {/* Anatomy */}
+              <section style={{ marginBottom: '40px' }}>
+                <h2 style={{ fontSize: '17px', fontWeight: 600, color: t.text, margin: '0 0 16px', letterSpacing: '-0.01em' }}>Anatomy</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {component.anatomy.map((part, index) => (
+                    <div key={index} style={{
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      background: theme === 'dark' ? t.surface : '#fff',
+                      borderRadius: '8px', padding: '12px 16px',
+                      border: `1px solid ${t.border}`,
+                    }}>
+                      <span style={{
+                        minWidth: '20px', height: '20px', borderRadius: '10px',
+                        background: t.primarySoft, color: t.primary,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '11px', fontWeight: 700, flexShrink: 0,
+                      }}>{index + 1}</span>
+                      <span style={{ fontSize: '13px', color: t.text }}>{part}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Calm Copy */}
+              <section style={{
+                background: t.primarySoft, borderRadius: '16px', padding: '20px',
+                border: `1px solid ${t.border}`,
+              }}>
+                <h2 style={{ fontSize: '15px', fontWeight: 600, color: t.text, margin: '0 0 12px' }}>Calm Copy Guidance</h2>
+                <div style={{ marginBottom: '14px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: t.textMuted }}>Example</span>
+                  <p style={{ fontSize: '14px', color: t.text, margin: '6px 0 0', fontStyle: 'italic' }}>"{component.calmCopy.example}"</p>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: t.secondary }}>Do</span>
+                    <ul style={{ margin: '6px 0 0', padding: '0 0 0 16px', fontSize: '12px', color: t.textMuted, lineHeight: 1.6 }}>
+                      {component.calmCopy.do.map((item, i) => <li key={i}>{item}</li>)}
+                    </ul>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: t.danger }}>Don't</span>
+                    <ul style={{ margin: '6px 0 0', padding: '0 0 0 16px', fontSize: '12px', color: t.textMuted, lineHeight: 1.6 }}>
+                      {component.calmCopy.dont.map((item, i) => <li key={i}>{item}</li>)}
+                    </ul>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            {/* Right: Spec panel */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+              {/* Trauma-Informed Purpose */}
+              <div style={{
+                background: theme === 'dark' ? t.surface : '#fff',
+                borderRadius: '12px', padding: '20px',
+                border: `1px solid ${t.border}`,
+              }}>
+                <h3 style={{ fontSize: '13px', fontWeight: 600, color: t.text, margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: t.primary }}>⊙</span> Trauma-Informed Purpose
+                </h3>
+                <p style={{ fontSize: '13px', color: t.textMuted, margin: '0 0 12px', lineHeight: 1.65 }}>
+                  {component.purpose}
+                </p>
+                <p style={{ fontSize: '13px', color: t.textMuted, margin: 0, lineHeight: 1.65 }}>
+                  SAMHSA principle: <strong style={{ color: t.text }}>{component.samhsaPrinciple}</strong>
+                </p>
+              </div>
+
+              {/* Component API */}
+              <div style={{
+                background: theme === 'dark' ? t.surface : '#fff',
+                borderRadius: '12px', padding: '20px',
+                border: `1px solid ${t.border}`,
+              }}>
+                <h3 style={{ fontSize: '13px', fontWeight: 600, color: t.text, margin: '0 0 12px' }}>Component API</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '0', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: t.textMuted, borderBottom: `1px solid ${t.border}`, paddingBottom: '6px', marginBottom: '8px' }}>
+                  <span>Prop</span><span>Type</span><span>Description</span>
+                </div>
+                {component.props.map((prop) => (
+                  <div key={prop.name} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '0', borderBottom: `1px solid ${t.border}`, padding: '8px 0', alignItems: 'start' }}>
+                    <code style={{ fontSize: '11px', color: t.primary, fontFamily: 'monospace', fontWeight: 600 }}>
+                      {prop.name}{prop.required ? '*' : ''}
                     </code>
+                    <span style={{ fontSize: '10px', color: t.textMuted, fontFamily: 'monospace', paddingRight: '6px' }}>{prop.type}</span>
+                    <span style={{ fontSize: '11px', color: t.textMuted, lineHeight: 1.5 }}>{prop.description}</span>
                   </div>
                 ))}
               </div>
-            </section>
 
-            {/* Nervous System Notes */}
-            <section style={{ marginBottom: '48px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Nervous-System Notes</h2>
-              <ul style={{ margin: 0, padding: '0 0 0 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {component.nervousSystemNotes.map((note, index) => (
-                  <li key={index} style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.7 }}>{note}</li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Accessibility */}
-            <section style={{ marginBottom: '48px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Accessibility</h2>
-              <ul style={{ margin: 0, padding: '0 0 0 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {component.accessibilityNotes.map((note, index) => (
-                  <li key={index} style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.7 }}>{note}</li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Contrast Checks */}
-            <section style={{ marginBottom: '48px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 600, color: t.text, margin: '0 0 24px' }}>Contrast Checks</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {component.contrastChecks.map((check, index) => (
-                  <div key={index} style={{
-                    display: 'flex', alignItems: 'center', gap: '12px',
-                    background: t.surface, borderRadius: '10px', padding: '14px 16px',
-                    border: `1px solid ${t.border}`,
-                  }}>
-                    <CheckCircle2 size={18} color={t.secondary} />
-                    <span style={{ fontSize: '14px', color: t.textMuted }}>{check}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Calm Copy */}
-            <section style={{
-              background: t.primarySoft, borderRadius: S.radius, padding: '24px',
-              border: `1px solid ${t.border}`,
-            }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, color: t.text, margin: '0 0 16px' }}>Calm Copy Guidance</h2>
-              <div style={{ marginBottom: '16px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: t.textMuted }}>Example</span>
-                <p style={{ fontSize: '15px', color: t.text, margin: '8px 0 0', fontStyle: 'italic' }}>"{component.calmCopy.example}"</p>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <span style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: t.secondary }}>Do</span>
-                  <ul style={{ margin: '8px 0 0', padding: '0 0 0 18px', fontSize: '13px', color: t.textMuted }}>
-                    {component.calmCopy.do.map((item, i) => <li key={i}>{item}</li>)}
-                  </ul>
-                </div>
-                <div>
-                  <span style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: t.danger }}>Don't</span>
-                  <ul style={{ margin: '8px 0 0', padding: '0 0 0 18px', fontSize: '13px', color: t.textMuted }}>
-                    {component.calmCopy.dont.map((item, i) => <li key={i}>{item}</li>)}
-                  </ul>
+              {/* Token Mapping */}
+              <div style={{
+                background: theme === 'dark' ? t.surface : '#fff',
+                borderRadius: '12px', padding: '20px',
+                border: `1px solid ${t.border}`,
+              }}>
+                <h3 style={{ fontSize: '13px', fontWeight: 600, color: t.text, margin: '0 0 12px' }}>Token Mapping</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {Object.entries(component.tokenMapping).map(([key, token]) => (
+                    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12px', color: t.textMuted }}>{key}</span>
+                      <code style={{ fontSize: '11px', color: t.primary, fontFamily: 'monospace', background: t.primarySoft, padding: '3px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                        {token}
+                      </code>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </section>
+
+              {/* Accessibility & Nervous System */}
+              <div style={{
+                background: theme === 'dark' ? t.surface : '#fff',
+                borderRadius: '12px', padding: '20px',
+                border: `1px solid ${t.border}`,
+              }}>
+                <h3 style={{ fontSize: '13px', fontWeight: 600, color: t.text, margin: '0 0 10px' }}>Accessibility &amp; Nervous System</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                  {component.accessibilityNotes.map((note, i) => (
+                    <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                      <CheckCircle2 size={13} color={t.secondary} style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <span style={{ fontSize: '12px', color: t.textMuted, lineHeight: 1.55 }}>{note}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {component.nervousSystemNotes.map((note, i) => (
+                    <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: '12px', color: t.primary, flexShrink: 0, marginTop: '1px' }}>♡</span>
+                      <span style={{ fontSize: '12px', color: t.textMuted, lineHeight: 1.55 }}>{note}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
           </div>
-        </div>
-      </main>
-
-      <Footer />
+        </main>
+      </div>
     </div>
   )
 }
@@ -2019,14 +2511,14 @@ export default function App() {
         </div>
         <div style={{ marginTop: '32px', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <a href="https://tropicgirlie.github.io/trauma-informed-ui/storybook/" target="_blank" rel="noreferrer">
-            <Button variant="primary">Open Storybook →</Button>
+            <Button variant="primary" iconAfter={<ArrowUpRight size={15} />}>Open Storybook</Button>
           </a>
           <a href="https://github.com/tropicgirlie/trauma-informed-ui" target="_blank" rel="noreferrer">
-            <Button variant="secondary">View source on GitHub</Button>
+            <Button variant="secondary" iconAfter={<ArrowUpRight size={15} />}>View on GitHub</Button>
           </a>
         </div>
         <p style={{ marginTop: '18px', textAlign: 'center', color: T.textSubtle, fontSize: '13px', lineHeight: 1.7 }}>
-          Early library version. Check Storybook and GitHub before production adoption.
+          In active development. Review the changelog before adopting in production.
         </p>
       </div>
     </section>
@@ -2035,9 +2527,10 @@ export default function App() {
 
 // ─── Footer ──────────────────────────────────────────────────────────────────
 function Footer() {
+  const isMobile = useIsMobile()
   return (
     <footer style={{ background: T.surface, borderTop: `1px solid ${T.border}`, padding: `40px ${S.gutter}` }}>
-      <div style={{ maxWidth: S.container, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)', gap: '24px', alignItems: 'start' }}>
+      <div style={{ maxWidth: S.container, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.1fr) minmax(0, 0.9fr)', gap: '24px', alignItems: 'start' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '14px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: T.primarySoft, color: T.primary, flexShrink: 0 }}>
             <BookOpen size={18} strokeWidth={2} />
@@ -2073,7 +2566,7 @@ function LandingPage({ activeHash, onNavigate }: { activeHash: string; onNavigat
       <Hero onNavigate={onNavigate} />
       <Principles />
       <LibraryRoadmap />
-      <LiveComponentsPreview />
+      <LiveComponentsPreview onNavigate={onNavigate} />
       <GlobalAlignment />
       <ProviderFocusPreview />
       <TokenPalette />
@@ -2119,6 +2612,18 @@ export default function App() {
   const handleToggleTheme = useCallback(() => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light')
   }, [])
+
+  useEffect(() => {
+    const titles: Record<View, string> = {
+      landing:   'Trauma-Informed UI — Design System',
+      tokens:    'Design Tokens — Trauma-Informed UI',
+      gallery:   'Component Gallery — Trauma-Informed UI',
+      component: activeComponentId
+        ? `${COMPONENT_SPECS.find(c => c.id === activeComponentId)?.name ?? activeComponentId} — Trauma-Informed UI`
+        : 'Component — Trauma-Informed UI',
+    }
+    document.title = titles[view]
+  }, [view, activeComponentId])
 
   // If hash is provider-focus-page, render ProviderPage directly
   if (isProviderPage) {
@@ -2168,6 +2673,8 @@ export default function App() {
   return (
     <ToastProvider>
       <TraumaInformedProvider>
+        <GlobalStyles />
+        <a id="ti-skip-link" href="#main-content">Skip to main content</a>
         {renderContent()}
       </TraumaInformedProvider>
     </ToastProvider>

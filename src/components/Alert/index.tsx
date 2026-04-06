@@ -1,4 +1,5 @@
 import React from 'react'
+import { FEEDBACK_TOKENS } from '../../tokens'
 
 export type AlertVariant = 'info' | 'success' | 'warning' | 'danger'
 
@@ -19,14 +20,7 @@ export interface AlertProps {
   className?: string
 }
 
-const ALERT_CONFIG: Record<AlertVariant, {
-  bg: string; border: string; titleColor: string; bodyColor: string; iconColor: string
-}> = {
-  info:    { bg: '#D1E5E8', border: '#3C7F8C', titleColor: '#1D4E58', bodyColor: '#2D6473', iconColor: '#3C7F8C' },
-  success: { bg: '#D6EAE0', border: '#4E8563', titleColor: '#1A4A2E', bodyColor: '#2E6647', iconColor: '#4E8563' },
-  warning: { bg: '#F4EDDB', border: '#C39A4A', titleColor: '#6B4E1A', bodyColor: '#8B6830', iconColor: '#C39A4A' },
-  danger:  { bg: '#F2E4E4', border: '#B06565', titleColor: '#5C2A2A', bodyColor: '#8C4C4C', iconColor: '#B06565' },
-}
+const ALERT_CONFIG = FEEDBACK_TOKENS
 
 const VARIANT_ICONS: Record<AlertVariant, React.ReactNode> = {
   info: (
@@ -58,6 +52,13 @@ const VARIANT_ICONS: Record<AlertVariant, React.ReactNode> = {
  * Trauma-informed: no alarm red, never flashing, always dismissible.
  * "Danger" uses desaturated rose — critical without triggering threat response.
  *
+ * Carbon Design System-aligned anatomy:
+ * - Gradient background for depth without harshness
+ * - Left accent border (4px) + full surrounding border (1px)
+ * - Icon always shown (never hidden)
+ * - Dismiss button always fully visible (not opacity-dependent)
+ * - Title and body in a column with clear hierarchy
+ *
  * SAMHSA principle: Safety; Trustworthiness
  *
  * @example
@@ -74,7 +75,7 @@ export function Alert({
   inline = false,
   className,
 }: AlertProps) {
-  const { bg, border, titleColor, bodyColor, iconColor } = ALERT_CONFIG[variant]
+  const { gradient, border, titleColor, bodyColor, iconColor } = ALERT_CONFIG[variant]
 
   return (
     <div
@@ -83,20 +84,24 @@ export function Alert({
       style={{
         display: 'flex',
         gap: '12px',
-        padding: '14px 16px',
-        background: bg,
+        padding: '16px 20px',
+        background: gradient,
         border: `1px solid ${border}`,
         borderLeft: `4px solid ${border}`,
-        borderRadius: inline ? 0 : '12px',
+        borderTopLeftRadius: inline ? 0 : '3px',
+        borderBottomLeftRadius: inline ? 0 : '3px',
+        borderTopRightRadius: inline ? 0 : '12px',
+        borderBottomRightRadius: inline ? 0 : '12px',
+        alignItems: 'flex-start',
       }}
     >
-      {/* Icon */}
+      {/* Icon — always shown */}
       <span
         aria-hidden="true"
         style={{
           flexShrink: 0,
           color: iconColor,
-          marginTop: '1px',
+          marginTop: '2px',
           display: 'flex',
           alignItems: 'flex-start',
         }}
@@ -104,14 +109,14 @@ export function Alert({
         {icon ?? VARIANT_ICONS[variant]}
       </span>
 
-      {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      {/* Content — title and body in column for clear hierarchy */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {title && (
           <p style={{
             fontSize: '14px',
             fontWeight: 600,
             color: titleColor,
-            margin: children ? '0 0 4px' : 0,
+            margin: 0,
             lineHeight: 1.4,
           }}>
             {title}
@@ -122,26 +127,26 @@ export function Alert({
         </div>
       </div>
 
-      {/* Dismiss */}
+      {/* Dismiss — always fully visible, hover shows background tint */}
       {onDismiss && (
         <button
           onClick={onDismiss}
-          aria-label="Dismiss"
+          aria-label="Dismiss alert"
           style={{
             flexShrink: 0,
             background: 'none',
             border: 'none',
             cursor: 'pointer',
             color: bodyColor,
-            padding: '2px',
+            padding: '4px',
             borderRadius: '4px',
             display: 'flex',
             alignItems: 'flex-start',
-            opacity: 0.7,
-            transition: 'opacity 150ms ease',
+            opacity: 1,
+            transition: 'background 150ms ease',
           }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '1')}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '0.7')}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.07)')}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'none')}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
