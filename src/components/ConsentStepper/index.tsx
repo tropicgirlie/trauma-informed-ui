@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react'
-import { Button } from '../Button'
+import * as Progress from '@radix-ui/react-progress'
+import * as RadioGroup from '@radix-ui/react-radio-group'
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react'
 
 export interface ConsentStep {
   /** The question asked at this step */
@@ -35,7 +36,7 @@ export interface ConsentStepperProps {
   onStepChange?: (stepIndex: number, result: ConsentStepResult) => void
   /** Completion message heading. Default: "All done" */
   completionHeading?: string
-  /** Completion message body. Default: "Your choices are saved." */
+  /** Completion message body. Avoid promising persistence unless the host app confirms it. */
   completionBody?: string
   /** Label for back button. Default: "← Go back" */
   backLabel?: string
@@ -43,6 +44,8 @@ export interface ConsentStepperProps {
   nextLabel?: string
   /** Custom className */
   className?: string
+  /** Additional inline styles */
+  style?: React.CSSProperties
 }
 
 /**
@@ -79,19 +82,24 @@ export function ConsentStepper({
   onComplete,
   onStepChange,
   completionHeading = 'All done',
-  completionBody = 'Your choices are saved. You can update them any time in your account settings.',
+  completionBody = 'You have reached the end of these choices.',
   backLabel = '← Go back',
   nextLabel = 'Continue',
   className,
+  style,
 }: ConsentStepperProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [results, setResults] = useState<(ConsentStepResult | null)[]>(
     () => new Array(steps.length).fill(null)
   )
   const [completed, setCompleted] = useState(false)
+  const questionId = useId()
+  const hintId = useId()
+  const questionRef = useRef<HTMLParagraphElement>(null)
+  const didMountRef = useRef(false)
 
   const currentResult = results[currentStep]
-  const progress = ((currentStep + 1) / (steps.length + 1)) * 100
+  const progress = steps.length > 0 ? ((currentStep + 1) / (steps.length + 1)) * 100 : 100
 
   const selectOption = useCallback(
     (option: ConsentOption) => {
@@ -125,26 +133,45 @@ export function ConsentStepper({
     if (currentStep > 0) setCurrentStep((s) => s - 1)
   }, [currentStep])
 
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true
+      return
+    }
+    questionRef.current?.focus({ preventScroll: true })
+  }, [currentStep])
+
+  if (steps.length === 0) {
+    return (
+      <div
+        data-ti-consent-stepper
+        className={['ti-surface', 'ti-consent-stepper', className].filter(Boolean).join(' ')}
+        style={style}
+      >
+        <div className="ti-consent-stepper__complete" role="status" aria-live="polite">
+          <p className="ti-consent-stepper__question">No consent steps configured</p>
+          <p className="ti-copy">Add at least one question so users can make a clear choice.</p>
+        </div>
+      </div>
+    )
+  }
+
   if (completed) {
     return (
       <div
         data-ti-consent-stepper
-        className={className}
-        style={{
-          background: '#ECE7DF',
-          border: '1px solid #D7D2C8',
-          borderRadius: '20px',
-          overflow: 'hidden',
-          maxWidth: '440px',
-        }}
+        className={['ti-surface', 'ti-consent-stepper', className].filter(Boolean).join(' ')}
+        style={style}
       >
-        <div style={{ height: '3px', background: '#3C7F8C' }} />
-        <div style={{ padding: '32px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', marginBottom: '12px' }}>✓</div>
-          <p style={{ fontSize: '15px', fontWeight: 500, color: '#2D6473', marginBottom: '6px' }}>
+        <Progress.Root className="ti-consent-stepper__progress-track" value={100}>
+          <Progress.Indicator className="ti-consent-stepper__progress" style={{ transform: 'scaleX(1)' }} />
+        </Progress.Root>
+        <div className="ti-consent-stepper__complete" role="status" aria-live="polite">
+          <div className="ti-consent-stepper__check" aria-hidden="true">✓</div>
+          <p className="ti-consent-stepper__question">
             {completionHeading}
           </p>
-          <p style={{ fontSize: '13px', color: '#62666D', lineHeight: 1.65 }}>{completionBody}</p>
+          <p className="ti-copy">{completionBody}</p>
         </div>
       </div>
     )
@@ -155,139 +182,85 @@ export function ConsentStepper({
   return (
     <div
       data-ti-consent-stepper
-      className={className}
-      style={{
-        background: '#ECE7DF',
-        border: '1px solid #D7D2C8',
-        borderRadius: '20px',
-        overflow: 'hidden',
-        maxWidth: '440px',
-      }}
+      className={['ti-surface', 'ti-consent-stepper', className].filter(Boolean).join(' ')}
+      style={style}
     >
-      {/* Progress bar */}
-      <div style={{ height: '3px', background: '#D7D2C8' }}>
-        <div
+      <Progress.Root
+        className="ti-consent-stepper__progress-track"
+        value={currentStep + 1}
+        max={steps.length}
+        aria-label={`Step ${currentStep + 1} of ${steps.length}`}
+      >
+        <Progress.Indicator
+          className="ti-consent-stepper__progress"
           style={{
-            height: '100%',
-            background: '#3C7F8C',
-            width: `${progress}%`,
-            transition: 'width 300ms ease',
+            transform: `scaleX(${progress / 100})`,
           }}
-          role="progressbar"
-          aria-valuenow={currentStep + 1}
-          aria-valuemin={1}
-          aria-valuemax={steps.length}
-          aria-label={`Step ${currentStep + 1} of ${steps.length}`}
         />
-      </div>
+      </Progress.Root>
 
-      {/* Step content */}
-      <div style={{ padding: '24px' }}>
-        <p style={{ fontSize: '12px', color: '#8B8F96', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+      <div className="ti-consent-stepper__content">
+        <p className="ti-eyebrow">
           Step {currentStep + 1} of {steps.length}
         </p>
 
-        <p style={{ fontSize: '16px', fontWeight: 500, color: '#2F3134', marginBottom: '8px', lineHeight: 1.45 }}>
+        <p className="ti-consent-stepper__question" id={questionId} tabIndex={-1} ref={questionRef}>
           {step.question}
         </p>
 
         {step.hint && (
-          <p
-            style={{
-              fontSize: '14px',
-              color: '#62666D',
-              marginBottom: '18px',
-              lineHeight: 1.7,
-            }}
-          >
+          <p className="ti-copy ti-consent-stepper__hint" id={hintId}>
             {step.hint}
           </p>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <RadioGroup.Root
+          className="ti-consent-stepper__options"
+          value={currentResult?.selectedValue}
+          onValueChange={(value) => {
+            const option = step.options.find((item) => item.value === value)
+            if (option) selectOption(option)
+          }}
+          aria-labelledby={questionId}
+          aria-describedby={step.hint ? hintId : undefined}
+        >
           {step.options.map((option) => {
-            const isSelected = currentResult?.selectedValue === option.value
             return (
-              <button
+              <RadioGroup.Item
                 key={option.value}
-                onClick={() => selectOption(option)}
-                aria-pressed={isSelected}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '10px 14px',
-                  border: `1.5px solid ${isSelected ? '#3C7F8C' : '#D7D2C8'}`,
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  background: isSelected ? '#D1E5E8' : '#F6F4F0',
-                  color: isSelected ? '#2D6473' : '#2F3134',
-                  fontFamily: 'inherit',
-                  fontSize: '13px',
-                  textAlign: 'left',
-                  transition: 'all 150ms ease',
-                }}
+                value={option.value}
+                data-caution={option.caution || undefined}
+                className="ti-consent-stepper__option"
               >
-                {/* Radio indicator */}
-                <span
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    border: `1.5px solid ${isSelected ? '#3C7F8C' : '#BDB8AE'}`,
-                    background: isSelected ? '#3C7F8C' : 'transparent',
-                    flexShrink: 0,
-                    position: 'relative',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  aria-hidden="true"
-                >
-                  {isSelected && (
-                    <span
-                      style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#fff',
-                      }}
-                    />
-                  )}
+                <span className="ti-consent-stepper__radio" aria-hidden="true">
+                  <RadioGroup.Indicator className="ti-consent-stepper__radio-indicator" />
                 </span>
-                {option.label}
-              </button>
+                <span>{option.label}</span>
+              </RadioGroup.Item>
             )
           })}
-        </div>
+        </RadioGroup.Root>
       </div>
 
-      {/* Footer */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '16px 24px',
-          borderTop: '1px solid #D7D2C8',
-        }}
-      >
+      <div className="ti-consent-stepper__footer">
         {currentStep > 0 ? (
-          <Button variant="ghost" size="sm" onClick={handleBack}>
+          <button
+            onClick={handleBack}
+            className="ti-button ti-button--quiet"
+          >
             {backLabel}
-          </Button>
+          </button>
         ) : (
           <span />
         )}
 
-        <Button
-          variant="primary"
-          size="sm"
+        <button
           onClick={handleNext}
           disabled={!currentResult}
+          className="ti-button ti-button--primary"
         >
           {nextLabel}
-        </Button>
+        </button>
       </div>
     </div>
   )

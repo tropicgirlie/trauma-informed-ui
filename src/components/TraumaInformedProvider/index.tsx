@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useEffect, useMemo } from 'react'
+import React, { createContext, useContext, useMemo } from 'react'
+import { useReducedMotion } from '../../hooks/useReducedMotion'
 
 export interface TraumaInformedConfig {
-  /** Respect prefers-reduced-motion and disable all animations. Default: true */
+  /** Disable component motion across the subtree. Default: true */
   motionSafe?: boolean
-  /** Apply the trauma-informed teal/sage palette as CSS variable overrides. Default: true */
+  /** Use the system palette as CSS variable overrides. Default: true */
   calmPalette?: boolean
   /** Duration in ms for undo windows across RegretButton instances. Default: 7000 */
   regretWindowMs?: number
@@ -11,7 +12,7 @@ export interface TraumaInformedConfig {
   pauseThresholdMs?: number
   /** Safe redirect destination used by SafeExit when no redirectTo prop given. */
   defaultSafeRedirect?: string
-  /** Whether to clear browser history entries on safe exit. Default: true */
+  /** Whether SafeExit should replace the current history entry. Earlier history may remain. Default: true. */
   clearHistoryOnExit?: boolean
 }
 
@@ -47,9 +48,6 @@ interface TraumaInformedProviderProps extends TraumaInformedConfig {
  *   <App />
  * </TraumaInformedProvider>
  */
-const FONT_ID = 'ti-atkinson-font'
-const FOCUS_ID = 'ti-focus-styles'
-
 export function TraumaInformedProvider({
   children,
   motionSafe = true,
@@ -59,28 +57,8 @@ export function TraumaInformedProvider({
   defaultSafeRedirect = 'https://weather.com',
   clearHistoryOnExit = true,
 }: TraumaInformedProviderProps) {
-  useEffect(() => {
-    if (!document.getElementById(FONT_ID)) {
-      const link = document.createElement('link')
-      link.id = FONT_ID
-      link.rel = 'stylesheet'
-      link.href =
-        'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap'
-      document.head.appendChild(link)
-    }
-    if (!document.getElementById(FOCUS_ID)) {
-      const style = document.createElement('style')
-      style.id = FOCUS_ID
-      style.textContent = `
-        [data-ti-provider] :focus-visible {
-          outline: none;
-          box-shadow: 0 0 0 3px rgba(60, 127, 140, 0.4);
-          border-radius: 4px;
-        }
-      `
-      document.head.appendChild(style)
-    }
-  }, [])
+  const prefersReducedMotion = useReducedMotion()
+  const disableMotion = motionSafe || prefersReducedMotion
   const value = useMemo(
     () => ({
       motionSafe,
@@ -93,37 +71,25 @@ export function TraumaInformedProvider({
     [motionSafe, calmPalette, regretWindowMs, pauseThresholdMs, defaultSafeRedirect, clearHistoryOnExit]
   )
 
+  // Apply calm palette as CSS custom property overrides if requested
   const style: React.CSSProperties = calmPalette
     ? ({
-        fontFamily: "'Atkinson Hyperlegible', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-        '--ti-bg':             '#F6F4F0',
-        '--ti-surface':        '#ECE7DF',
-        '--ti-surface-alt':    '#E4DDD4',
-        '--ti-primary':        '#3C7F8C',
-        '--ti-primary-hover':  '#2D6473',
-        '--ti-primary-soft':   '#D1E5E8',
-        '--ti-primary-text':   '#FFFFFF',
-        '--ti-secondary':      '#7C8F7A',
-        '--ti-secondary-hover':'#667860',
-        '--ti-secondary-soft': '#DCE8DA',
-        '--ti-secondary-text': '#FFFFFF',
-        '--ti-accent':         '#8C7BAF',
-        '--ti-accent-soft':    '#E8E3F4',
-        '--ti-success':        '#4E8563',
-        '--ti-success-soft':   '#D6EAE0',
-        '--ti-warning':        '#C39A4A',
-        '--ti-warning-soft':   '#F4EDDB',
-        '--ti-danger':         '#B06565',
-        '--ti-danger-soft':    '#F2E4E4',
-        '--ti-danger-hover':   '#8C4C4C',
-        '--ti-text':           '#2F3134',
-        '--ti-text-muted':     '#62666D',
-        '--ti-text-faint':     '#8B8F96',
-        '--ti-border':         '#D7D2C8',
-        '--ti-border-strong':  '#BDB8AE',
-        '--ti-motion-fast': motionSafe ? '0ms' : '150ms ease',
-        '--ti-motion-med':  motionSafe ? '0ms' : '300ms ease',
-        '--ti-motion-slow': motionSafe ? '0ms' : '500ms ease',
+        '--ti-color-sage': '#1868db',
+        '--ti-color-sage-light': '#e9f2ff',
+        '--ti-color-sage-dark': '#0c66e4',
+        '--ti-color-dust': '#9e4c00',
+        '--ti-color-dust-light': '#fff4e5',
+        '--ti-color-dust-dark': '#693200',
+        '--ti-color-plum': '#803fa5',
+        '--ti-color-plum-light': '#f3f0ff',
+        '--ti-color-plum-dark': '#48245d',
+        '--ti-color-blush': '#ae2e24',
+        '--ti-color-blush-light': '#ffedeb',
+        '--ti-color-blush-dark': '#5d1f1a',
+        '--ti-color-cream': '#ffffff',
+        '--ti-motion-fast': disableMotion ? '0ms' : '150ms ease',
+        '--ti-motion-med': disableMotion ? '0ms' : '300ms ease',
+        '--ti-motion-slow': disableMotion ? '0ms' : '500ms ease',
       } as React.CSSProperties)
     : {}
 

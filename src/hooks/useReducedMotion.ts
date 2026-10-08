@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
  * useReducedMotion
@@ -12,11 +12,12 @@ import { useEffect, useState, useRef, useCallback } from 'react'
  */
 export function useReducedMotion(): boolean {
   const [prefersReduced, setPrefersReduced] = useState(() => {
-    if (typeof window === 'undefined') return false
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   })
 
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     const handler = (e: MediaQueryListEvent) => setPrefersReduced(e.matches)
     mq.addEventListener('change', handler)
@@ -26,10 +27,10 @@ export function useReducedMotion(): boolean {
   return prefersReduced
 }
 
-// ─────────────────────────────────────────
-
 export interface UseSafeExitOptions {
   redirectTo?: string
+  replaceCurrentEntry?: boolean
+  /** @deprecated Use replaceCurrentEntry. */
   clearHistory?: boolean
 }
 
@@ -37,7 +38,8 @@ export interface UseSafeExitOptions {
  * useSafeExit
  *
  * Returns an exit function that redirects to a safe destination and optionally
- * clears browser history. Use when you need programmatic control over the exit.
+ * replaces the current history entry. Browsers do not allow reliable clearing
+ * of prior cross-origin history entries.
  *
  * @example
  * const exit = useSafeExit({ redirectTo: 'https://weather.com' })
@@ -45,21 +47,17 @@ export interface UseSafeExitOptions {
  */
 export function useSafeExit({
   redirectTo = 'https://weather.com',
-  clearHistory = true,
+  replaceCurrentEntry,
+  clearHistory,
 }: UseSafeExitOptions = {}) {
   return useCallback(() => {
-    if (clearHistory) {
-      try {
-        const steps = window.history.length
-        for (let i = 0; i < steps; i++) {
-          window.history.pushState(null, '', redirectTo)
-        }
-      } catch {
-        // history manipulation may be blocked
-      }
+    if (typeof window === 'undefined') return
+    if (replaceCurrentEntry ?? clearHistory ?? true) {
+      window.location.replace(redirectTo)
+      return
     }
-    window.location.replace(redirectTo)
-  }, [redirectTo, clearHistory])
+    window.location.assign(redirectTo)
+  }, [redirectTo, replaceCurrentEntry, clearHistory])
 }
 
 // ─────────────────────────────────────────
@@ -101,11 +99,11 @@ export function usePauseDetection({
   }, [thresholdMs, isPaused, onPause, onResume])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
     const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart']
     events.forEach((e) => window.addEventListener(e, reset, { passive: true }))
-    const t = setTimeout(reset, 0)
+    reset()
     return () => {
-      clearTimeout(t)
       events.forEach((e) => window.removeEventListener(e, reset))
       if (timerRef.current) clearTimeout(timerRef.current)
     }

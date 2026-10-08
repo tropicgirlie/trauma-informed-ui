@@ -1,25 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTraumaInformed } from '../TraumaInformedProvider'
-import { Button } from '../Button'
 
 export interface RegretButtonProps {
-  /** Controls the visual weight and colour of the trigger button.
-   * Use `destructive` for delete / remove / irreversible actions.
-   * NEVER use `primary` for both a submit and a delete in the same view. */
-  variant?: 'primary' | 'destructive'
   /** The label shown on the primary action button */
   label: string
+  /** Use destructive styling for deletion and removal actions. */
+  variant?: 'primary' | 'destructive'
   /** Called when the user confirms the action (undo window expires without undo) */
   onAction: () => void | Promise<void>
-  /** Called when the user clicks Undo — use to reverse the action */
+  /** Called when the user clicks Undo before the action runs. */
   onUndo?: () => void
   /** Override the undo window from TraumaInformedProvider. Default: 7000ms */
   windowMs?: number
-  /** Text shown in the toast. Default: "Action completed" */
+  /** Text shown during the undo window. Default: "Action will complete shortly" */
   toastMessage?: string
   /** Text on the undo button inside the toast. Default: "Undo" */
   undoLabel?: string
-  /** Message shown after a successful undo. Default: "Undone — no harm done" */
+  /** Message shown after cancelling within the undo window. Default: "Cancelled — no harm done" */
   undoneMessage?: string
   /** Icon element rendered inside the button */
   icon?: React.ReactNode
@@ -30,14 +27,6 @@ export interface RegretButtonProps {
 }
 
 type State = 'idle' | 'pending' | 'undone'
-
-const TrashIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
-    <path d="M10 11v6" /><path d="M14 11v6" />
-  </svg>
-)
 
 const UndoIcon = () => (
   <svg
@@ -75,15 +64,15 @@ const UndoIcon = () => (
  * />
  */
 export function RegretButton({
-  variant = 'primary',
   label,
+  variant = 'primary',
   onAction,
   onUndo,
   windowMs,
-  toastMessage = 'Action completed',
+  toastMessage = 'Action will complete shortly',
   undoLabel = 'Undo',
-  undoneMessage = 'Undone — no harm done',
-  icon,
+  undoneMessage = 'Cancelled — no harm done',
+  icon = <UndoIcon />,
   className,
   disabled = false,
 }: RegretButtonProps) {
@@ -93,12 +82,17 @@ export function RegretButton({
   const [state, setState] = useState<State>('idle')
   const [progress, setProgress] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const startTimeRef = useRef<number>(0)
 
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current)
       intervalRef.current = null
+    }
+    if (resetRef.current) {
+      clearTimeout(resetRef.current)
+      resetRef.current = null
     }
   }, [])
 
@@ -127,8 +121,7 @@ export function RegretButton({
     clearTimer()
     setState('undone')
     onUndo?.()
-    // Reset to idle after showing undone message
-    setTimeout(() => setState('idle'), 3000)
+    resetRef.current = setTimeout(() => setState('idle'), 3000)
   }, [clearTimer, onUndo])
 
   useEffect(() => () => clearTimer(), [clearTimer])
@@ -136,42 +129,25 @@ export function RegretButton({
   const circumference = 2 * Math.PI * 11 // r=11
   const dashOffset = circumference * progress
 
-  const resolvedIcon = icon ?? (variant === 'destructive' ? <TrashIcon /> : <UndoIcon />)
-
   return (
-    <div data-ti-regret-button>
-      {/* Primary trigger */}
-      <Button
-        variant={variant}
+    <div data-ti-regret-button className="ti-regret-button">
+      <button
         onClick={handleTrigger}
         disabled={disabled || state === 'pending'}
-        className={className}
+        className={['ti-button', variant === 'destructive' ? 'ti-button--destructive' : 'ti-button--primary', className].filter(Boolean).join(' ')}
         aria-busy={state === 'pending'}
-        iconBefore={resolvedIcon}
       >
+        {icon}
         {label}
-      </Button>
+      </button>
 
-      {/* Undo toast */}
       {state === 'pending' && (
         <div
           role="status"
           aria-live="polite"
           aria-label={`${toastMessage}. ${undoLabel} available for ${Math.ceil(duration / 1000)} seconds.`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '12px 16px',
-            background: '#3C7F8C',
-            color: '#FFFFFF',
-            borderRadius: '12px',
-            fontSize: '13px',
-            maxWidth: '320px',
-            marginTop: '14px',
-          }}
+          className="ti-regret-button__toast"
         >
-          {/* Countdown ring */}
           <svg
             width="28"
             height="28"
@@ -197,47 +173,26 @@ export function RegretButton({
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={dashOffset}
-              style={{ transition: 'stroke-dashoffset 50ms linear' }}
+              style={{ transition: 'stroke-dashoffset var(--ti-motion-fast)' }}
             />
           </svg>
 
-          <span style={{ flex: 1, fontSize: '14px' }}>{toastMessage}</span>
+          <span className="ti-regret-button__toast-message">{toastMessage}</span>
 
           <button
             onClick={handleUndo}
-            style={{
-              background: 'rgba(255,255,255,0.18)',
-              border: '1.5px solid rgba(255,255,255,0.5)',
-              color: '#fff',
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              flexShrink: 0,
-              minHeight: '36px',
-              letterSpacing: '0.01em',
-            }}
+            className="ti-regret-button__undo"
           >
             {undoLabel}
           </button>
         </div>
       )}
 
-      {/* Undone confirmation */}
       {state === 'undone' && (
         <div
           role="status"
           aria-live="polite"
-          style={{
-            marginTop: '14px',
-            padding: '10px 14px',
-            background: '#D1E5E8',
-            color: '#2D6473',
-            borderRadius: '12px',
-            fontSize: '13px',
-          }}
+          className="ti-regret-button__undone"
         >
           ✓ {undoneMessage}
         </div>

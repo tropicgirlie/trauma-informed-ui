@@ -4,9 +4,11 @@ import { useTraumaInformed } from '../TraumaInformedProvider'
 export interface SafeExitProps {
   /** URL to redirect to. Overrides provider default. */
   redirectTo?: string
-  /** Whether to clear browser history entries before redirect. Overrides provider default. */
+  /** Whether to replace this history entry with the destination. Earlier entries may remain. */
+  replaceCurrentEntry?: boolean
+  /** @deprecated Use replaceCurrentEntry. This does not clear browser history. */
   clearHistory?: boolean
-  /** Label on the exit button. Default: "Leave this page safely" */
+  /** Label on the exit button. Default: "Leave this page" */
   label?: string
   /** Keyboard shortcut that triggers exit. Default: 'Escape' (double-press) */
   shortcutKey?: string
@@ -14,11 +16,13 @@ export interface SafeExitProps {
   shortcutPresses?: number
   /** Whether to show keyboard shortcut hint beneath button. Default: true */
   showShortcutHint?: boolean
+  /** Whether the keyboard shortcut is active. Default: true. Disable for embedded examples. */
+  enableShortcut?: boolean
   /** Where to position the button. Default: 'top-right' */
   position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'inline'
   /** Custom className */
   className?: string
-  /** Called just before redirect fires — useful for analytics or cleanup */
+  /** Synchronous cleanup just before redirect. Do not rely on an async request completing. */
   onBeforeExit?: () => void
 }
 
@@ -49,8 +53,8 @@ const positionStyles: Record<string, React.CSSProperties> = {
 /**
  * SafeExit
  *
- * A persistent, one-click exit to a neutral destination. Optionally clears
- * browser history so the page cannot be easily found again.
+ * A persistent, one-click exit to a neutral destination. Can replace the
+ * current history entry, but cannot clear earlier browser history.
  *
  * SAMHSA principle: Safety
  * Neurobiological rationale: Perceived entrapment activates the threat response.
@@ -60,29 +64,29 @@ const positionStyles: Record<string, React.CSSProperties> = {
  * Design note: The blush colour is a deliberate break from the sage system
  * to make this component immediately distinct without reading as danger/alert.
  *
- * Origins: This pattern was developed specifically for domestic violence
- * resource sites where a user may need to leave immediately if an abuser
- * enters the room. The CHI 2023 study "Click Here to Exit" found it present
- * on 80.3% of 2,045 DV support sites — but implementations vary widely in
- * effectiveness. This component implements the recommended specification.
+ * This is a navigation primitive for contexts where someone may need to
+ * leave immediately. A production service must also consider session cleanup,
+ * loading delay, destination choice, and the limits of browser history control.
  *
  * @example
- * <SafeExit redirectTo="https://weather.com" clearHistory position="top-right" />
+ * <SafeExit redirectTo="https://weather.com" replaceCurrentEntry position="top-right" />
  */
 export function SafeExit({
   redirectTo,
+  replaceCurrentEntry,
   clearHistory,
-  label = 'Leave this page safely',
+  label = 'Leave this page',
   shortcutKey = 'Escape',
   shortcutPresses = 2,
   showShortcutHint = true,
+  enableShortcut = true,
   position = 'top-right',
   className,
   onBeforeExit,
 }: SafeExitProps) {
   const config = useTraumaInformed()
   const destination = redirectTo ?? config.defaultSafeRedirect
-  const shouldClearHistory = clearHistory ?? config.clearHistoryOnExit
+  const shouldReplaceCurrentEntry = replaceCurrentEntry ?? clearHistory ?? config.clearHistoryOnExit
 
   const pressCountRef = React.useRef(0)
   const pressTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -90,27 +94,21 @@ export function SafeExit({
   const exit = useCallback(() => {
     onBeforeExit?.()
 
-    if (shouldClearHistory) {
-      // Replace all history entries with the safe destination
-      // This prevents the back button from returning to the original page
-      const steps = window.history.length
+    if (shouldReplaceCurrentEntry) {
       window.location.replace(destination)
-      try {
-        for (let i = 0; i < steps; i++) {
-          window.history.pushState(null, '', destination)
-        }
-      } catch {
-        // history manipulation may be blocked in some contexts
-      }
+      return
     }
 
-    window.location.replace(destination)
-  }, [destination, shouldClearHistory, onBeforeExit])
+    window.location.assign(destination)
+  }, [destination, shouldReplaceCurrentEntry, onBeforeExit])
 
   // Keyboard shortcut: double-press Escape
   useEffect(() => {
+    if (!enableShortcut) return
     const handler = (e: KeyboardEvent) => {
       if (e.key !== shortcutKey) return
+      const target = e.target as HTMLElement | null
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
 
       pressCountRef.current += 1
 
@@ -132,52 +130,27 @@ export function SafeExit({
       window.removeEventListener('keydown', handler)
       if (pressTimerRef.current) clearTimeout(pressTimerRef.current)
     }
-  }, [shortcutKey, shortcutPresses, exit])
-
-  const buttonStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '11px 18px',
-    minHeight: '44px',
-    background: '#B06565',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '14px',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    fontWeight: 500,
-    letterSpacing: '0.01em',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-    transition: 'opacity 150ms ease',
-  }
+  }, [shortcutKey, shortcutPresses, exit, enableShortcut])
 
   return (
     <div
-      style={positionStyles[position]}
       data-ti-safe-exit
-      className={className}
+      data-position={position}
+      className={['ti-safe-exit', className].filter(Boolean).join(' ')}
+      style={position === 'inline' ? positionStyles.inline : undefined}
     >
       <button
         onClick={exit}
-        style={buttonStyle}
-        aria-label={`${label} — opens ${destination}`}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '0.85')}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '1')}
+        className="ti-button ti-button--safe-exit"
+        aria-label={`${label}. Opens ${destination}.`}
       >
         <ExitArrow />
         {label}
       </button>
 
-      {showShortcutHint && (
+      {enableShortcut && showShortcutHint && (
         <p
-          style={{
-            fontSize: '11px',
-            color: 'rgba(255,255,255,0.75)',
-            marginTop: '5px',
-            textAlign: 'center',
-          }}
+          className="ti-safe-exit__hint"
           aria-hidden="true"
         >
           or press {shortcutKey} twice

@@ -23,5 +23,8 @@ jobs:
       - name: Type check
         run: npm run type-check
 
+      - name: Type check website
+        run: npm run type-check-demo
+
       - name: Build library
         run: npm run build

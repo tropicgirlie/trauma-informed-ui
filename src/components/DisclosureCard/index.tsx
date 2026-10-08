@@ -1,46 +1,55 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useTraumaInformed } from '../TraumaInformedProvider'
-import { Button } from '../Button'
-
-// ─────────────────────────────────────────
-// DisclosureCard
-// ─────────────────────────────────────────
+import * as Collapsible from '@radix-ui/react-collapsible'
+import React, { useCallback, useState } from 'react'
 
 export interface DisclosureCardProps {
-  /** The label shown on the collapsed header */
+  /** Label on the collapsed header. Be specific — vague labels reduce protective value. */
   label: string
-  /** Short warning shown before the content reveals. Should be warm, not clinical. */
+  /** Warning shown before the content reveals. Warm, specific, non-clinical. 1-2 sentences. */
   warningText: string
-  /** Optional badge text on the header e.g. "may be distressing" */
+  /** Short badge pill on the header e.g. "may be distressing", "clinical language" */
   badge?: string
   /** The sensitive content to reveal */
   children: React.ReactNode
   /** Whether the card starts expanded. Default: false */
   defaultOpen?: boolean
-  /** Custom className */
-  className?: string
-  /** Called when the card opens */
+  /** Label for revealing the sensitive content after the warning is read. */
+  revealLabel?: string
+  /** Called when the user opens the card */
   onOpen?: () => void
+  /** Called when the user closes the card */
+  onClose?: () => void
+  /** Additional className */
+  className?: string
+  /** Additional inline styles */
+  style?: React.CSSProperties
 }
 
 /**
  * DisclosureCard
  *
- * Progressively reveals sensitive content. Users choose how deep to go.
- * Shows a warm content warning before the material is visible.
+ * Progressively reveals sensitive content within a section.
+ * The user sees a specific, warm content warning before anything is shown.
  *
  * SAMHSA principle: Safety; Trustworthiness & Transparency
- * Neurobiological rationale: Surprise is a threat signal. Predictable,
- * layered disclosure keeps users in their window of tolerance by letting them
- * choose when and whether to engage with difficult content.
+ *
+ * Neurobiological rationale: Involuntary exposure to distressing content is
+ * a threat signal that elevates cortisol and narrows attentional bandwidth.
+ * Layered disclosure preserves the user's sense of control — which is itself
+ * a nervous system regulator. The warning allows neurological preparation
+ * before engagement, analogous to a therapist saying "I'm going to ask you
+ * something difficult" before doing so.
+ *
+ * Different from ContentWarning:
+ * - DisclosureCard: reveals a text section within a larger page
+ * - ContentWarning: gates specific media (image, video) — fully hidden by default
  *
  * @example
  * <DisclosureCard
  *   label="Medication side effects"
  *   badge="may be distressing"
- *   warningText="This section includes clinical descriptions. Take a moment if you need one."
+ *   warningText="This includes clinical descriptions. Take a moment if you need one."
  * >
- *   <p>Some people experience nausea...</p>
+ *   <p>Some people experience nausea during the first few weeks...</p>
  * </DisclosureCard>
  */
 export function DisclosureCard({
@@ -49,372 +58,83 @@ export function DisclosureCard({
   badge,
   children,
   defaultOpen = false,
-  className,
+  revealLabel = 'Show this section',
   onOpen,
+  onClose,
+  className,
+  style,
 }: DisclosureCardProps) {
   const [open, setOpen] = useState(defaultOpen)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState<number | undefined>(defaultOpen ? undefined : 0)
+  const [acknowledged, setAcknowledged] = useState(defaultOpen)
 
-  useEffect(() => {
-    if (!contentRef.current) return
-    if (open) {
-      const h = contentRef.current.scrollHeight
-      setHeight(h)
-      setTimeout(() => setHeight(undefined), 350)
-    } else {
-      setHeight(contentRef.current.scrollHeight)
-      requestAnimationFrame(() => setHeight(0))
-    }
-  }, [open])
-
-  const toggle = useCallback(() => {
-    setOpen((prev) => {
-      if (!prev) onOpen?.()
-      return !prev
-    })
-  }, [onOpen])
+  const handleOpenChange = useCallback((next: boolean) => {
+    setOpen(next)
+    next ? onOpen?.() : onClose?.()
+  }, [onOpen, onClose])
 
   return (
-    <div
+    <Collapsible.Root
       data-ti-disclosure-card
-      className={className}
-      style={{
-        background: '#ECE7DF',
-        border: '1px solid #D7D2C8',
-        borderRadius: '20px',
-        overflow: 'hidden',
-        maxWidth: '420px',
-      }}
+      data-open={open}
+      open={open}
+      onOpenChange={handleOpenChange}
+      className={['ti-surface', 'ti-disclosure', className].filter(Boolean).join(' ')}
+      style={style}
     >
-      <button
-        onClick={toggle}
-        aria-expanded={open}
-        style={{
-          width: '100%',
-          padding: '16px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          textAlign: 'left',
-        }}
-      >
-        <span
-          style={{
-            fontSize: '14px',
-            fontWeight: 500,
-            color: '#2F3134',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-          }}
-        >
+      <Collapsible.Trigger className="ti-disclosure__trigger">
+        <span className="ti-disclosure__label">
           {label}
           {badge && (
-            <span
-              style={{
-                fontSize: '11px',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                background: '#D1E5E8',
-                color: '#2D6473',
-                fontWeight: 400,
-              }}
-            >
+            <span className="ti-disclosure__badge">
               {badge}
             </span>
           )}
         </span>
-        <span
-          aria-hidden="true"
-          style={{
-            fontSize: '20px',
-            color: '#8B8F96',
-            transform: open ? 'rotate(90deg)' : 'none',
-            transition: 'transform 250ms ease',
-            lineHeight: 1,
-          }}
-        >
-          ›
-        </span>
-      </button>
+        <ChevronIcon />
+      </Collapsible.Trigger>
 
-      <div
-        ref={contentRef}
-        style={{
-          overflow: 'hidden',
-          height: height === undefined ? 'auto' : `${height}px`,
-          transition: 'height 350ms ease',
-        }}
-      >
-        <div style={{ padding: '0 20px 12px' }}>
-          <p
-            style={{
-              padding: '10px 14px',
-              background: '#F4EDDB',
-              borderRadius: '8px',
-              fontSize: '12px',
-              color: '#8B6830',
-              lineHeight: 1.65,
-              margin: 0,
-            }}
-          >
-            {warningText}
-          </p>
-        </div>
-        <div
-          style={{
-            padding: '0 20px 20px',
-            fontSize: '14px',
-            color: '#62666D',
-            lineHeight: 1.8,
-            borderTop: '1px solid #D7D2C8',
-            paddingTop: '16px',
-            marginTop: '0',
-          }}
-        >
-          {children}
-        </div>
-      </div>
-    </div>
+      <Collapsible.Content className="ti-disclosure__content">
+        <p className="ti-disclosure__warning">{warningText}</p>
+        {acknowledged ? (
+          <div className="ti-disclosure__body">
+            {children}
+          </div>
+        ) : (
+          <div className="ti-disclosure__actions">
+            <button
+              className="ti-button ti-button--secondary"
+              onClick={() => setAcknowledged(true)}
+            >
+              {revealLabel}
+            </button>
+          </div>
+        )}
+      </Collapsible.Content>
+    </Collapsible.Root>
   )
 }
 
-// ─────────────────────────────────────────
-// CalmingMessage
-// ─────────────────────────────────────────
-
-export interface CalmingMessageProps {
-  /** The main message text */
-  children: React.ReactNode
-  /** Estimated time shown beneath the message e.g. "Takes about 2 minutes" */
-  timeEstimate?: string
-  /** Colour variant — sage (default) or dust */
-  variant?: 'sage' | 'dust'
-  /** Custom className */
-  className?: string
-}
-
-/**
- * CalmingMessage
- *
- * A nervous-system-aware message that orients users before hard content.
- * Neither minimising ("don't worry!") nor clinically cold.
- *
- * SAMHSA principle: Trustworthiness & Transparency; Safety
- * Neurobiological rationale: Predictability reduces threat appraisal. Time
- * estimates are particularly effective — knowing how long something takes
- * reduces uncertainty, a key nervous system regulator.
- *
- * @example
- * <CalmingMessage timeEstimate="Takes about 2 minutes">
- *   This next section asks about your pregnancy history. There's no right or
- *   wrong answer — just take it at your pace.
- * </CalmingMessage>
- */
-export function CalmingMessage({
-  children,
-  timeEstimate,
-  variant = 'sage',
-  className,
-}: CalmingMessageProps) {
-  const isSage = variant === 'sage'
-  const bg = isSage ? '#D1E5E8' : '#F4EDDB'
-  const border = isSage ? '#3C7F8C' : '#C39A4A'
-  const text = isSage ? '#2D6473' : '#8B6830'
-  const timeColor = isSage ? '#3C7F8C' : '#C39A4A'
-
+function ChevronIcon() {
   return (
-    <div
-      data-ti-calming-message
-      className={className}
-      style={{
-        background: bg,
-        borderLeft: `3px solid ${border}`,
-        borderRadius: '0 12px 12px 0',
-        padding: '14px 18px',
-        maxWidth: '380px',
-      }}
+    <svg
+      className="ti-disclosure__chevron"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
     >
-      <div style={{ fontSize: '13px', color: text, lineHeight: 1.75 }}>{children}</div>
-
-      {timeEstimate && (
-        <p
-          style={{
-            fontSize: '11px',
-            marginTop: '8px',
-            color: timeColor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-          }}
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-          {timeEstimate}
-        </p>
-      )}
-    </div>
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
   )
 }
 
-// ─────────────────────────────────────────
-// PauseAware
-// ─────────────────────────────────────────
-
-export interface PauseAwareAction {
-  label: string
-  onClick: () => void
-  variant?: 'primary' | 'secondary'
-}
-
-export interface PauseAwareProps {
-  /** Message shown when inactivity is detected */
-  message?: string
-  /** Actions to offer the user */
-  actions?: PauseAwareAction[]
-  /** Override the pause threshold from TraumaInformedProvider */
-  thresholdMs?: number
-  /** Custom className */
-  className?: string
-  /** Called when the pause prompt appears */
-  onPause?: () => void
-  /** Called when any action is taken */
-  onResume?: () => void
-}
-
-/**
- * PauseAware
- *
- * Detects inactivity during sensitive flows and gently offers pacing options
- * — without judgement or implied expectation about what the user should do.
- *
- * SAMHSA principle: Empowerment; Peer Support
- * Neurobiological rationale: Lingering on difficult content without support
- * can push users toward hypoarousal or hyperarousal. This component notices
- * the pause and offers a moment of co-regulation.
- *
- * Design note: "Keep going" is always the FIRST and PRIMARY option. This
- * normalises continuing without implying the pause was a problem.
- *
- * @example
- * <PauseAware
- *   message="No rush at all. Would you like to take a break or keep going?"
- *   actions={[
- *     { label: 'Keep going', onClick: () => {}, variant: 'primary' },
- *     { label: 'Save and pause', onClick: () => saveProgress() },
- *     { label: 'Exit safely', onClick: () => exit() },
- *   ]}
- * />
- */
-export function PauseAware({
-  message = 'No rush at all. Would you like to take a break, save your progress, or keep going?',
-  actions,
-  thresholdMs,
-  className,
-  onPause,
-  onResume,
-}: PauseAwareProps) {
-  const config = useTraumaInformed()
-  const threshold = thresholdMs ?? config.pauseThresholdMs
-  const [visible, setVisible] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const resetTimer = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    if (visible) return
-    timerRef.current = setTimeout(() => {
-      setVisible(true)
-      onPause?.()
-    }, threshold)
-  }, [threshold, visible, onPause])
-
-  const handleAction = useCallback(() => {
-    setVisible(false)
-    onResume?.()
-    resetTimer()
-  }, [onResume, resetTimer])
-
-  const defaultActions: PauseAwareAction[] = useMemo(() => [
-    { label: 'Keep going', onClick: () => handleAction(), variant: 'primary' },
-    { label: 'Save and pause', onClick: () => handleAction() },
-    { label: 'Exit safely', onClick: () => handleAction() },
-  ], [handleAction])
-
-  const activeActions = actions ?? defaultActions
-
-  useEffect(() => {
-    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart']
-    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }))
-    const t = setTimeout(resetTimer, 0)
-    return () => {
-      clearTimeout(t)
-      events.forEach((e) => window.removeEventListener(e, resetTimer))
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [resetTimer])
-
-  if (!visible) return null
-
-  return (
-    <div
-      data-ti-pause-aware
-      role="dialog"
-      aria-label="Pacing check-in"
-      className={className}
-      style={{
-        background: '#ECE7DF',
-        border: '1px solid #D7D2C8',
-        borderRadius: '20px',
-        padding: '22px 24px',
-        maxWidth: '380px',
-      }}
-    >
-      <p
-        style={{
-          fontSize: '11px',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          color: '#8B8F96',
-          marginBottom: '12px',
-        }}
-      >
-        You've been here a little while
-      </p>
-      <p style={{ fontSize: '15px', color: '#2F3134', lineHeight: 1.7, marginBottom: '18px' }}>
-        {message}
-      </p>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        {activeActions.map((action, i) => (
-          <Button
-            key={i}
-            variant={action.variant === 'primary' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => {
-              action.onClick()
-              handleAction()
-            }}
-          >
-            {action.label}
-          </Button>
-        ))}
-      </div>
-    </div>
-  )
-}
+// Preserve the earlier component-path imports used by existing consumers.
+export { CalmingMessage } from '../CalmingMessage'
+export type { CalmingMessageProps } from '../CalmingMessage'
+export { PauseAware } from '../PauseAware'
+export type { PauseAwareProps, PauseAwareAction } from '../PauseAware'

@@ -31,13 +31,8 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
-      - name: Install demo dependencies
-        run: npm ci
-        working-directory: demo
-
       - name: Build landing page
-        run: npm run build
-        working-directory: demo
+        run: npm run build-demo -- --base /trauma-informed-ui/
         env:
           NODE_ENV: production
 
