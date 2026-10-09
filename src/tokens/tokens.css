@@ -365,6 +365,7 @@
 .ti-disclosure__content {
   animation: ti-fade-in var(--ti-motion-med);
   border-top: 1px solid var(--ti-border);
+  padding-top: var(--ti-space-4);
 }
 
 .ti-disclosure__warning {
@@ -373,7 +374,7 @@
   color: var(--ti-color-dust-dark);
   font-size: var(--ti-font-size-sm);
   line-height: var(--ti-line-height-base);
-  margin: var(--ti-space-4) var(--ti-space-5);
+  margin: 0 var(--ti-space-5) var(--ti-space-4);
   padding: var(--ti-space-3) var(--ti-space-4);
 }
 
