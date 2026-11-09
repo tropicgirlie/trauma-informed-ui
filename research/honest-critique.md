@@ -118,7 +118,10 @@ The short version: the existing trauma-informed design literature does not addre
 people whose job involves sustained exposure to others' trauma. This is a gap this
 library explicitly sets out to fill — but the planned care worker components
 (SessionTransition, ExposurePacingProvider, VoluntaryCheckIn) are not yet built.
-What is documented is a specification, not a validated implementation.
+What is documented is a specification, not a validated implementation. The Harbor
+referral comparison tests disclosure, separate sharing, and return with patterns
+that already exist. Those planned components stay specifications until that
+comparison gives them a reason to be built.
 
 ---
 

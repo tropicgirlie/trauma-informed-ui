@@ -18,6 +18,7 @@ import type { ConsentStepResult } from '../../src'
 import '../../src/tokens/tokens.css'
 import './styles.css'
 import { DecisionGuide } from './DecisionGuide'
+import { ReferralComparison } from './ReferralComparison'
 
 function DemoApp() {
   const [warningSkipped, setWarningSkipped] = useState(false)
@@ -34,6 +35,7 @@ function DemoApp() {
           <a className="system-nav__brand" href="#overview"><span className="system-nav__mark">TI/UI</span><span className="system-nav__edition">The field guide<br />Issue 01 / 2026</span></a>
           <nav className="system-nav__links" aria-label="Main sections">
           <a className="system-nav__desktop-link" href="#decision-guide">Decision guide</a>
+          <a className="system-nav__desktop-link" href="#referral-comparison">Referral study</a>
           <a className="system-nav__desktop-link" href="#care-under-load">Care under load</a>
           <a className="system-nav__desktop-link" href="#field-notes">Field notes</a>
           <a className="system-nav__desktop-link" href="#components">Try patterns</a>
@@ -44,6 +46,7 @@ function DemoApp() {
             <summary>Sections</summary>
             <div onClick={(event) => { if ((event.target as HTMLElement).closest('a')) event.currentTarget.parentElement?.removeAttribute('open') }}>
               <a href="#decision-guide">Decision guide</a>
+              <a href="#referral-comparison">Referral study</a>
               <a href="#care-under-load">Care under load</a>
               <a href="#field-notes">Field notes</a>
               <a href="#components">Try patterns</a>
@@ -65,7 +68,7 @@ function DemoApp() {
               </p>
               <div className="system-hero__actions">
                 <a className="demo-button demo-button--primary" href="#decision-guide">Find a pattern</a>
-                <a className="demo-button demo-button--secondary" href="#components">Try examples</a>
+                <a className="demo-button demo-button--secondary" href="#referral-comparison">Compare a referral</a>
               </div>
             </div>
             <div className="system-hero__path" aria-label="How to use this site">
@@ -80,6 +83,8 @@ function DemoApp() {
           </section>
 
           <DecisionGuide />
+
+          <ReferralComparison />
 
           <aside className="care-bridge" id="care-under-load" aria-labelledby="care-bridge-title">
             <div><p className="demo-kicker">From the practice / 01</p><span className="care-bridge__marker">↳</span></div>
@@ -286,7 +291,7 @@ function DemoApp() {
                   <span>Pacing</span>
                   <h3>Pause Aware</h3>
                 </header>
-                <p className="demo-note">Start the example, then leave this page idle for 5 seconds to see the optional check-in.</p>
+                <p className="demo-note">Start the example, then leave this page idle for 5 seconds to see the optional check-in. In the referral comparison, this automatic prompt is a hypothesis. The default care-worker path is an explicit pause.</p>
                 {!pauseDemoActive && <button className="demo-button demo-button--secondary" onClick={() => { setPauseResult(''); setPauseDemoActive(true) }}>Start pacing example</button>}
                 {pauseDemoActive && <PauseAware
                   thresholdMs={5000}
@@ -328,7 +333,7 @@ function DemoApp() {
               </article>
               <article>
                 <h3>What still needs evidence</h3>
-                <p>Whether a pattern improves understanding, control, or recovery for a particular population and task. The project research notes that controlled tests of these components are still missing.</p>
+                <p>The Harbor referral comparison is built and has not been run with care workers. The protocol and the results that would change the recommendation are in research/harbor-referral.md. No pattern here has a measured outcome yet.</p>
               </article>
             </div>
             <p className="demo-status">This design system is under active development. Review component behavior and claims before production use.</p>

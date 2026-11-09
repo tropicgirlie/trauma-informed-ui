@@ -1,7 +1,7 @@
 {
   "name": "trauma-informed-ui",
   "version": "0.1.0",
-  "description": "React component library and design system for trauma-aware interfaces — rooted in care ethics, nervous system literacy, and design for dignity.",
+  "description": "Experimental React patterns for choice, refusal, recovery, and return in high-stakes services. A local prototype, not a published package.",
   "author": "Luana Micheau <luana@momops.io>",
   "license": "MIT",
   "homepage": "https://tropicgirlie.github.io/trauma-informed-ui/",

@@ -24,7 +24,10 @@ for `SessionTransition`, `ExposurePacingProvider`, and `VoluntaryCheckIn` are
 documented, not yet implemented.
 
 **What's still needed:** User research with actual care workers. Co-design.
-Validation that the proposed patterns actually help.
+Validation that the proposed patterns actually help. The next step is the Harbor
+referral comparison in `research/harbor-referral.md`, using patterns that already
+exist. The unbuilt care-worker components stay specifications until that
+comparison gives them a reason to be built.
 
 ---
 
@@ -108,21 +111,22 @@ researchers who can design and run valid studies. Metrics that go beyond
 
 **What exists:** Growing awareness among practitioners. UXPA now offers TI
 professional development. Several large organisations (GOV.UK, GSA) have adopted
-TI principles.
+TI principles. GOV.UK has shipped a production "Exit this page" pattern with an
+explicit limit on what a website can do to browser history.
 
-**What's missing:** A reusable, well-documented, npm-installable component library.
-This is the most actionable gap — and the one this library directly fills.
+**What's missing:** Evidence that a team can adopt a specific behavior, see what
+it changes in a real task, and know when to reject it. A package name does not
+close that gap. This repository has no npm release and no GitHub release.
 
-The existing field produces writing, principles, and occasionally one-off
-implementations. Nobody has packaged the patterns as something a developer can
-`npm install`. This is why TI design remains a specialist practice rather than
-default practice.
+**What this repository contributes:** Source for a small set of behaviors, a
+decision guide, and the Harbor referral comparison. The comparison is the
+artifact a team can run locally and argue with. It is an experimental prototype.
 
-**What this library contributes:** The library itself.
-
-**What's still needed:** Storybook documentation, TypeScript types, comprehensive
-test coverage, Figma component kit, and a community of contributors who can
-maintain it over time.
+**What's still needed:** The Harbor sessions in `research/harbor-referral.md`.
+A published package is reasonable only after those sessions, and only with a
+version number that states the experimental status. Storybook, tests, and a
+contributor community support that package. They do not substitute for the
+sessions.
 
 ---
 
@@ -143,4 +147,4 @@ maintain it over time.
 ---
 
 *Maintained by Luana Micheau / Care-Conscious Design*
-*Last updated: March 2026*
+*Last updated: November 2026*

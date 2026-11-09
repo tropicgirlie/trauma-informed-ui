@@ -28,7 +28,7 @@ function readSavedGuide(): SavedGuide | null {
   } catch { return null }
 }
 
-const scenarios: Record<ScenarioId, {
+export const scenarios: Record<ScenarioId, {
   label: string
   pattern: string
   patternId: string
@@ -66,12 +66,12 @@ const scenarios: Record<ScenarioId, {
   },
   'care-work': {
     label: 'Support a care worker task',
-    pattern: 'Pause Aware',
-    patternId: 'pause-aware',
-    reason: 'Offer optional pacing and a clear return path without treating a pause as a problem.',
-    sample: 'You can keep going or pause this review. Your place in the task will stay here.',
-    snippet: "<PauseAware\n  actions={[\n    { label: 'Keep going', onClick: resumeTask, variant: 'primary' },\n    { label: 'Pause here', onClick: saveAndPause },\n  ]}\n/>",
-    checks: ['Does the task preserve progress before offering a pause?', 'Can the worker dismiss the prompt without losing focus?', 'Is the check-in private and voluntary?'],
+    pattern: 'Pause and return',
+    patternId: 'referral-comparison',
+    reason: 'Keep the worker’s place, and let them pause themselves. An automatic inactivity prompt is a separate version in the referral comparison, because it can interrupt someone who is still reading.',
+    sample: 'Pause and keep my place. The referral stays here until you come back.',
+    snippet: "Save the draft at each meaningful change.\nOffer an explicit pause.\nReturn the worker to the same field.\nDo not load the next case until they say they are ready.",
+    checks: ['Does the draft survive an interruption without asking the worker to reconstruct it?', 'Can they refuse a share and still finish the task?', 'Does an automatic prompt appear while they are still working?', 'Is any check-in private, optional, and kept away from management metrics?'],
   },
 }
 

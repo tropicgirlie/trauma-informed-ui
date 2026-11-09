@@ -169,6 +169,13 @@ Interfaces should:
 
 ## What this library will add
 
+The Harbor referral comparison (`research/harbor-referral.md`) comes first. It
+tests disclosure, separate sharing, a cancel window, and return after
+interruption with components that already exist. It also includes the automatic
+pause prompt as a version the study is prepared to retire. The components below
+remain specifications. Build one when that comparison shows the behavior is
+doing work the current patterns do not.
+
 The following components are planned for care worker contexts. They do not exist
 in the current release.
 
