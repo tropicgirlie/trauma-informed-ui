@@ -181,6 +181,8 @@ a { color: var(--ti-color-sage-dark); }
 .referral__screen h3 { font-size: clamp(32px, 3vw, 46px); line-height: 1.05; margin: 0 0 12px; }
 .referral__lede, .referral__hint, .referral__meta p, .referral__preview p, .referral__cover p, .referral__next p { color: var(--muted); font-size: 15px; line-height: 1.55; }
 .referral__lede { margin: 0 0 22px; max-width: 68ch; }
+.referral__fields { border: 0; margin: 0; min-width: 0; padding: 0; }
+.referral__fields:disabled { opacity: 0.72; }
 .referral__block, .referral__preview, .referral__cover, .referral__next { margin: 0 0 22px; }
 .referral__screen h4, .referral__meta h3 { font-size: 22px; line-height: 1.2; margin: 0 0 10px; }
 .referral__paragraph { background: #f6f1e4; border-left: 3px solid var(--signal); color: var(--ink); line-height: 1.55; margin: 0 0 16px; padding: 14px 16px; }

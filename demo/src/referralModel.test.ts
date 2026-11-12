@@ -49,6 +49,18 @@ describe('Harbor referral comparison', () => {
     expect(preview.warnings.some((warning) => warning.includes('leaves the phone number out'))).toBe(true)
   })
 
+  it('describes a shared phone number as its own field beside the redacted paragraph', () => {
+    const draft = createDraft('Please advise on rent.')
+    draft.disclosure = 'opened'
+    draft.care = { shareClinical: 'yes', sharePhone: 'yes', allowFollowUp: 'no' }
+    const preview = partnerPreview('care-conscious', draft)
+    expect(preview.state).toBe('ready')
+    if (preview.state !== 'ready') return
+    expect(preview.summary).toContain('removed from it')
+    expect(preview.summary).toContain('as its own field')
+    expect(preview.summary).not.toContain('without the phone number')
+  })
+
   it('warns when the clinical paragraph would be shared without being opened', () => {
     const draft = createDraft('Note')
     draft.disclosure = 'skipped'

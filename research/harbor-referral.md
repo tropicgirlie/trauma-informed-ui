@@ -37,7 +37,7 @@ What this evidence does not do: it does not show that the care-conscious Harbor 
 
 The demo at `#referral-comparison` runs three versions of RH-2041. The rules live in `demo/src/referralModel.ts` and are covered by unit tests.
 
-**Disclosure.** On the care-conscious screen the paragraph sits behind a specific warning: nausea, missed rent, and a phone number. The worker can open it or skip it. Opening is latched; skipping later does not pretend they never had access. Sharing the paragraph without opening it produces a visible warning in the partner preview.
+**Disclosure.** On the care-conscious screen the paragraph sits behind a specific warning: nausea, missed rent, and a phone number. The worker can open the warning, reveal the paragraph, or skip it. The paragraph counts as opened when they choose “Show this section,” not when the warning expands. Revealing it is latched; skipping later does not pretend they never saw it. Sharing the paragraph without opening it produces a visible warning in the partner preview.
 
 **Separate refusal.** Three questions, one at a time: share the paragraph, share the phone number, allow direct contact. Each “No” still allows the referral to be sent. The conventional screen blocks send until one checkbox accepts all three.
 

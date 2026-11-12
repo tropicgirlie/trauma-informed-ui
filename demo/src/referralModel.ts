@@ -110,12 +110,14 @@ function joinList(items: string[]): string {
 
 export function summariseDelivery(contents: ShareContents): string {
   const received: string[] = []
-  if (contents.clinicalParagraph) {
-    received.push(contents.phoneTravelsInsideClinicalParagraph
-      ? 'the clinical paragraph, including the phone number'
-      : 'the clinical paragraph, without the phone number')
-  }
-  if (contents.phoneNumber && !contents.phoneTravelsInsideClinicalParagraph) {
+  if (contents.clinicalParagraph && contents.phoneTravelsInsideClinicalParagraph) {
+    received.push('the clinical paragraph, including the phone number')
+  } else if (contents.clinicalParagraph && contents.phoneNumber) {
+    received.push('the clinical paragraph with the phone number removed from it')
+    received.push('the phone number 555-0148 as its own field')
+  } else if (contents.clinicalParagraph) {
+    received.push('the clinical paragraph, without the phone number')
+  } else if (contents.phoneNumber) {
     received.push('the phone number 555-0148')
   }
   if (contents.partnerMayContact) received.push('permission for Northside to contact Alex')

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { ConsentStepper, DisclosureCard, PauseAware, RegretButton } from '../../src'
 import {
   CLINICAL_PARAGRAPH,
+  type PartnerPreview,
   type VariantId,
   applyDisclosure,
   careChoicesFromResults,
@@ -14,6 +15,8 @@ import {
   variants,
 } from './referralModel'
 
+type ReadyPreview = Extract<PartnerPreview, { state: 'ready' }>
+
 function ReferralScreen({ variant }: { variant: VariantId }) {
   const [draft, setDraft] = useState(createDraft)
   const [consentKey, setConsentKey] = useState(0)
@@ -21,11 +24,20 @@ function ReferralScreen({ variant }: { variant: VariantId }) {
   const [paused, setPaused] = useState(false)
   const [notice, setNotice] = useState('')
   const [log, setLog] = useState<string[]>([])
+  const [sendKey, setSendKey] = useState(0)
+  const [armedDelivery, setArmedDelivery] = useState<ReadyPreview | null>(null)
   const returnRef = useRef<HTMLButtonElement>(null)
+  const armedRef = useRef<ReadyPreview | null>(null)
 
   const record = useCallback((message: string) => {
     setLog((items) => [...items, message])
     setNotice(message)
+  }, [])
+
+  const clearArmed = useCallback(() => {
+    armedRef.current = null
+    setArmedDelivery(null)
+    setSendKey((key) => key + 1)
   }, [])
 
   useEffect(() => {
@@ -33,6 +45,7 @@ function ReferralScreen({ variant }: { variant: VariantId }) {
   }, [paused])
 
   function resetCase() {
+    clearArmed()
     setDraft(createDraft())
     setConsentKey((key) => key + 1)
     setPhase('editing')
@@ -46,26 +59,53 @@ function ReferralScreen({ variant }: { variant: VariantId }) {
       record('The referral has already been sent. Ending the call does not bring it back.')
       return
     }
+    const pending = armedRef.current !== null
+    if (pending) clearArmed()
     const result = interruptionResult(variant, draft)
     setDraft(result.draft)
     if (!result.preserved) setConsentKey((key) => key + 1)
     setPaused(false)
-    record(result.message)
+    record(pending ? `${result.message} The send in progress was cancelled.` : result.message)
+  }
+
+  function pauseReferral(source: 'explicit' | 'prompt') {
+    const pending = armedRef.current !== null
+    if (pending) clearArmed()
+    setPaused(true)
+    if (pending) {
+      record('Pending send cancelled. The referral stays here and nothing was sent.')
+      return
+    }
+    record(source === 'prompt'
+      ? 'Automatic prompt used to pause. The referral stayed here.'
+      : 'Paused from the explicit control. The referral stayed here.')
   }
 
   const onAutomaticPrompt = useCallback(() => {
     record('Automatic prompt appeared after 8 seconds without input on this page.')
   }, [record])
 
-  function finishSend() {
+  function armSend() {
     const outcome = partnerPreview(variant, draft)
-    if (outcome.state === 'blocked') {
-      record(outcome.reason)
+    if (outcome.state !== 'ready') return
+    armedRef.current = outcome
+    setArmedDelivery(outcome)
+  }
+
+  function finishSend() {
+    const outcome = variant === 'conventional' ? partnerPreview(variant, draft) : armedRef.current
+    if (!outcome || outcome.state !== 'ready') {
+      if (variant === 'conventional') {
+        const blocked = partnerPreview(variant, draft)
+        if (blocked.state === 'blocked') record(blocked.reason)
+      }
       return
     }
     const next = nextCaseAfterSend(variant)
     const messages = [`${outcome.summary} ${outcome.warnings.join(' ')}`.trim()]
     if (next === 'immediate') messages.push('Next case RH-2042 opened without asking.')
+    armedRef.current = null
+    setArmedDelivery(null)
     setPhase(next === 'immediate' ? 'next' : 'sent')
     setPaused(false)
     setLog((items) => [...items, ...messages])
@@ -73,8 +113,9 @@ function ReferralScreen({ variant }: { variant: VariantId }) {
   }
 
   const outcome = partnerPreview(variant, draft)
+  const shown = armedDelivery ?? outcome
   const careful = variant !== 'conventional'
-  const editing = phase === 'editing' && !paused
+  const editing = phase === 'editing'
 
   return (
     <div className="referral__layout">
@@ -91,100 +132,109 @@ function ReferralScreen({ variant }: { variant: VariantId }) {
           </div>
         )}
 
-        {editing && careful && (
-          <div className="referral__block">
-            <DisclosureCard
-              label="Clinical paragraph"
-              badge="medication and housing"
-              warningText="This paragraph describes nausea after a new medication and a missed rent payment. The phone number is included for you. It is removed from the copy a partner would receive."
-              onOpen={() => setDraft((current) => ({ ...current, disclosure: applyDisclosure(current.disclosure, 'open') }))}
-            >
-              <p>{CLINICAL_PARAGRAPH}</p>
-            </DisclosureCard>
-            {draft.disclosure === 'opened'
-              ? <p className="referral__hint">Opened by choice.</p>
-              : <button type="button" className="demo-button demo-button--secondary" onClick={() => setDraft((current) => ({ ...current, disclosure: applyDisclosure(current.disclosure, 'skip') }))}>Skip this paragraph</button>}
-          </div>
-        )}
-
-        {editing && !careful && (
-          <div className="referral__block">
-            <h4>Clinical record</h4>
-            <p className="referral__paragraph">{CLINICAL_PARAGRAPH}</p>
-            <label className="decision-form__choice">
-              <input
-                type="checkbox"
-                checked={draft.bundledShare}
-                onChange={(event) => setDraft((current) => ({ ...current, bundledShare: event.target.checked }))}
-              />
-              <span>Share the full record, Alex’s phone number, and permission for Northside to contact Alex.</span>
-            </label>
-          </div>
-        )}
-
         {editing && (
-          <label className="referral__field">
-            <span>Note for the referral</span>
-            <textarea
-              value={draft.note}
-              onChange={(event) => setDraft((current) => ({ ...current, note: event.target.value }))}
-              placeholder="Write what you want the partner service to do."
-            />
-          </label>
-        )}
+          <div hidden={paused}>
+            <fieldset className="referral__fields" disabled={armedDelivery !== null}>
+              {careful && (
+                <div className="referral__block">
+                  <DisclosureCard
+                    label="Clinical paragraph"
+                    badge="medication and housing"
+                    warningText="This paragraph describes nausea after a new medication and a missed rent payment. The phone number is included for you. It is removed from the copy a partner would receive."
+                    onReveal={() => setDraft((current) => ({ ...current, disclosure: applyDisclosure(current.disclosure, 'open') }))}
+                  >
+                    <p>{CLINICAL_PARAGRAPH}</p>
+                  </DisclosureCard>
+                  {draft.disclosure === 'opened'
+                    ? <p className="referral__hint">Paragraph revealed by choice.</p>
+                    : <button type="button" className="demo-button demo-button--secondary" onClick={() => setDraft((current) => ({ ...current, disclosure: applyDisclosure(current.disclosure, 'skip') }))}>Skip this paragraph</button>}
+                </div>
+              )}
 
-        {editing && careful && (
-          <div className="referral__block">
-            <h4>What may be shared</h4>
-            <ConsentStepper
-              key={consentKey}
-              steps={consentSteps}
-              completionHeading="Sharing choices recorded"
-              completionBody="You can still change them before sending. Refusal does not stop you closing the referral."
-              onComplete={(results) => setDraft((current) => ({ ...current, care: careChoicesFromResults(results) }))}
-              onStepChange={(_index, result) => setDraft((current) => {
-                const care = careChoicesFromResults([result])
-                return {
-                  ...current,
-                  care: {
-                    shareClinical: result.stepIndex === 0 ? care.shareClinical : current.care.shareClinical,
-                    sharePhone: result.stepIndex === 1 ? care.sharePhone : current.care.sharePhone,
-                    allowFollowUp: result.stepIndex === 2 ? care.allowFollowUp : current.care.allowFollowUp,
-                  },
-                }
-              })}
-            />
-            {outcome.state === 'ready' && (
-              <button type="button" className="demo-button demo-button--secondary" onClick={() => {
-                setDraft((current) => ({ ...current, care: createDraft().care }))
-                setConsentKey((key) => key + 1)
-              }}>Change sharing choices</button>
+              {!careful && (
+                <div className="referral__block">
+                  <h4>Clinical record</h4>
+                  <p className="referral__paragraph">{CLINICAL_PARAGRAPH}</p>
+                  <label className="decision-form__choice">
+                    <input
+                      type="checkbox"
+                      checked={draft.bundledShare}
+                      onChange={(event) => setDraft((current) => ({ ...current, bundledShare: event.target.checked }))}
+                    />
+                    <span>Share the full record, Alex’s phone number, and permission for Northside to contact Alex.</span>
+                  </label>
+                </div>
+              )}
+
+              <label className="referral__field">
+                <span>Note for the referral</span>
+                <textarea
+                  value={draft.note}
+                  onChange={(event) => setDraft((current) => ({ ...current, note: event.target.value }))}
+                  placeholder="Write what you want the partner service to do."
+                />
+              </label>
+
+              {careful && (
+                <div className="referral__block">
+                  <h4>What may be shared</h4>
+                  <ConsentStepper
+                    key={consentKey}
+                    steps={consentSteps}
+                    completionHeading="Sharing choices recorded"
+                    completionBody="You can still change them before sending. Refusal does not stop you closing the referral."
+                    onComplete={(results) => setDraft((current) => ({ ...current, care: careChoicesFromResults(results) }))}
+                    onStepChange={(_index, result) => setDraft((current) => {
+                      const care = careChoicesFromResults([result])
+                      return {
+                        ...current,
+                        care: {
+                          shareClinical: result.stepIndex === 0 ? care.shareClinical : current.care.shareClinical,
+                          sharePhone: result.stepIndex === 1 ? care.sharePhone : current.care.sharePhone,
+                          allowFollowUp: result.stepIndex === 2 ? care.allowFollowUp : current.care.allowFollowUp,
+                        },
+                      }
+                    })}
+                  />
+                  {outcome.state === 'ready' && !armedDelivery && (
+                    <button type="button" className="demo-button demo-button--secondary" onClick={() => {
+                      setDraft((current) => ({ ...current, care: createDraft().care }))
+                      setConsentKey((key) => key + 1)
+                    }}>Change sharing choices</button>
+                  )}
+                </div>
+              )}
+
+              {careful && (
+                <div className="referral__preview" role="region" aria-label="What the partner service would receive">
+                  <h4>What Northside would receive</h4>
+                  {shown.state === 'blocked'
+                    ? <p>{shown.reason}</p>
+                    : <>
+                      <p>{shown.summary}</p>
+                      {shown.warnings.map((warning) => <p key={warning}>{warning}</p>)}
+                    </>}
+                </div>
+              )}
+            </fieldset>
+
+            {careful && (
+              <RegretButton
+                key={sendKey}
+                label="Send referral"
+                toastMessage={shown.state === 'ready' ? `Sending in 7 seconds. ${shown.summary}` : 'Answer each sharing question before sending.'}
+                undoneMessage="Cancelled. Nothing was sent."
+                windowMs={7000}
+                disabled={outcome.state === 'blocked' || paused}
+                onArm={armSend}
+                onUndo={() => {
+                  clearArmed()
+                  record('Send cancelled during the 7 second window. Nothing was delivered.')
+                }}
+                onAction={finishSend}
+              />
             )}
           </div>
-        )}
-
-        {editing && careful && (
-          <div className="referral__preview" role="region" aria-label="What the partner service would receive">
-            <h4>What Northside would receive</h4>
-            {outcome.state === 'blocked'
-              ? <p>{outcome.reason}</p>
-              : <>
-                <p>{outcome.summary}</p>
-                {outcome.warnings.map((warning) => <p key={warning}>{warning}</p>)}
-              </>}
-          </div>
-        )}
-
-        {editing && careful && (
-          <RegretButton
-            label="Send referral"
-            toastMessage={outcome.state === 'ready' ? `Sending in 7 seconds. ${outcome.summary}` : 'Answer each sharing question before sending.'}
-            undoneMessage="Cancelled. Nothing was sent."
-            windowMs={7000}
-            disabled={outcome.state === 'blocked'}
-            onUndo={() => record('Send cancelled during the 7 second window. Nothing was delivered.')}
-            onAction={finishSend}
-          />
         )}
 
         {editing && !careful && (
@@ -210,20 +260,20 @@ function ReferralScreen({ variant }: { variant: VariantId }) {
           </div>
         )}
 
-        {usesAutomaticPrompt(variant) && editing && (
+        {usesAutomaticPrompt(variant) && editing && !paused && (
           <PauseAware
             thresholdMs={8000}
             message="No rush. You can keep going, or pause here and keep this referral."
             onPause={onAutomaticPrompt}
             actions={[
               { label: 'Keep going', variant: 'primary', onClick: () => record('Automatic prompt dismissed with Keep going.') },
-              { label: 'Pause here', onClick: () => { setPaused(true); record('Automatic prompt used to pause. The referral stayed here.') } },
+              { label: 'Pause here', onClick: () => pauseReferral('prompt') },
             ]}
           />
         )}
 
         <div className="referral__actions">
-          {editing && careful && <button type="button" className="demo-button demo-button--secondary" onClick={() => { setPaused(true); record('Paused from the explicit control. The referral stayed here.') }}>Pause and keep my place</button>}
+          {editing && !paused && careful && <button type="button" className="demo-button demo-button--secondary" onClick={() => pauseReferral('explicit')}>Pause and keep my place</button>}
           <button type="button" className="demo-button demo-button--secondary" onClick={simulateCall}>Simulate a phone call</button>
           <button type="button" className="demo-button demo-button--secondary" onClick={resetCase}>Reset this version</button>
         </div>
