@@ -12,6 +12,10 @@ Product designers, frontend developers, and care-service practitioners who need 
 
 Help a visitor describe a design task, receive a relevant pattern brief, try a working example, and check the decision before shipping. Success means visitors can explain why a pattern fits, implement its core behavior, and identify what still needs validation.
 
+## Current proof
+
+The Harbor referral comparison is the case used to test disclosure, separate sharing decisions, cancel-and-return, and an automatic pause prompt. The prototype is built. Sessions with care workers have not been run. See `research/harbor-referral.md`. The public README matches this limit.
+
 ## Brand Personality
 
 Clear, respectful, and evidence-aware. The site should convey competence and agency without making clinical promises.

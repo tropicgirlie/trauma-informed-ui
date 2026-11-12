@@ -8,6 +8,8 @@ export interface RegretButtonProps {
   variant?: 'primary' | 'destructive'
   /** Called when the user confirms the action (undo window expires without undo) */
   onAction: () => void | Promise<void>
+  /** Called when the undo window starts, before the action runs. */
+  onArm?: () => void
   /** Called when the user clicks Undo before the action runs. */
   onUndo?: () => void
   /** Override the undo window from TraumaInformedProvider. Default: 7000ms */
@@ -67,6 +69,7 @@ export function RegretButton({
   label,
   variant = 'primary',
   onAction,
+  onArm,
   onUndo,
   windowMs,
   toastMessage = 'Action will complete shortly',
@@ -113,9 +116,10 @@ export function RegretButton({
 
   const handleTrigger = useCallback(() => {
     if (disabled || state === 'pending') return
+    onArm?.()
     setState('pending')
     startTimer()
-  }, [disabled, state, startTimer])
+  }, [disabled, state, startTimer, onArm])
 
   const handleUndo = useCallback(() => {
     clearTimer()

@@ -216,7 +216,9 @@ export function ConsentStepper({
 
         <RadioGroup.Root
           className="ti-consent-stepper__options"
-          value={currentResult?.selectedValue}
+          // Empty string keeps the group controlled. Passing undefined lets Radix
+          // own the value until an effect runs, so Continue stays disabled after a click.
+          value={currentResult?.selectedValue ?? ''}
           onValueChange={(value) => {
             const option = step.options.find((item) => item.value === value)
             if (option) selectOption(option)

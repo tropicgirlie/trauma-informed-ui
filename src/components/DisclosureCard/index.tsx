@@ -14,8 +14,10 @@ export interface DisclosureCardProps {
   defaultOpen?: boolean
   /** Label for revealing the sensitive content after the warning is read. */
   revealLabel?: string
-  /** Called when the user opens the card */
+  /** Called when the warning panel expands, before the sensitive content is shown. */
   onOpen?: () => void
+  /** Called when the user chooses to reveal the content inside the warning. */
+  onReveal?: () => void
   /** Called when the user closes the card */
   onClose?: () => void
   /** Additional className */
@@ -60,6 +62,7 @@ export function DisclosureCard({
   defaultOpen = false,
   revealLabel = 'Show this section',
   onOpen,
+  onReveal,
   onClose,
   className,
   style,
@@ -103,7 +106,10 @@ export function DisclosureCard({
           <div className="ti-disclosure__actions">
             <button
               className="ti-button ti-button--secondary"
-              onClick={() => setAcknowledged(true)}
+              onClick={() => {
+                setAcknowledged(true)
+                onReveal?.()
+              }}
             >
               {revealLabel}
             </button>

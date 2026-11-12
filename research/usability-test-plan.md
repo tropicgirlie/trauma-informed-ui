@@ -1,5 +1,9 @@
 # Usability test plan for the design-system website
 
+## Scope
+
+This plan tests the decision-guide website: whether a practitioner can choose, understand, and apply a pattern. It does not test whether a pattern helps a care worker complete a referral. That comparison is specified in [`harbor-referral.md`](./harbor-referral.md), and those sessions have not been run. Neither plan has findings yet.
+
 ## Goal
 
 Find out whether the website helps a practitioner choose, understand, and apply a pattern. This is a usability study, not a clinical assessment or a test of whether a component reduces distress.
